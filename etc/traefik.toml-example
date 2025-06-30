@@ -1,0 +1,182 @@
+[accessLog]
+  format = "json"
+  [accessLog.fields]
+    defaultMode = "keep"
+    [accessLog.fields.names]
+      "ClientUsername" = "drop"
+    [accessLog.fields.headers]
+      defaultMode = "drop"
+      [accessLog.fields.headers.names]
+        "Host" = "keep"
+        "X-Forwarded-For" = "keep"
+        "X-Real-IP" = "keep"
+        "X-Forwarded-Proto" = "keep"
+        "User-Agent" = "keep"
+        "Referer" = "keep"
+        "Content-Type" = "keep"
+        "Accept" = "keep"
+        "Accept-Language" = "keep"
+        "Accept-Encoding" = "keep"
+
+[log]
+  # https://doc.traefik.io/traefik/v2.11/observability/logs/#level
+  # level = "DEBUG"
+  #level = "INFO"
+  level = "WARN"
+  # https://doc.traefik.io/traefik/v2.11/observability/logs/#format
+  format = "json"
+
+[providers.file]
+  filename = "/etc/traefik/traefik-dynamic.toml"
+  watch = false
+
+[providers.docker]
+  endpoint = "unix:///var/run/docker.sock"
+  #
+  # Expose containers by default through Traefik.
+  # If set to false, containers that do not have a traefik.enable=true
+  # label are ignored from the resulting routing configuration.
+  # https://doc.traefik.io/traefik/v2.11/providers/docker/#exposedbydefault
+  exposedByDefault = false
+  #
+  # The constraints option can be set to an expression that Traefik matches against the container
+  # labels to determine whether to create any route for that container. If none of the container labels
+  # match the expression, no route for that container is created.
+  # See: Scope of Service Discovery https://doc.traefik.io/traefik/v2.11/providers/overview/#restrict-the-scope-of-service-discovery
+  constraints = "Label(`traefik.scope`, `apps`)"
+  #
+  # The defaultRule option defines what routing rule to apply to a container if no rule is defined by a label.
+  #
+  # It must be a valid Go template, and can use sprig template functions. The container name can be accessed 
+  # with the ContainerName identifier. The service name can be accessed with the Name identifier. The template
+  # has access to all the labels defined on this container with the Labels identifier.
+  #
+  # See Traefik & Docker: https://doc.traefik.io/traefik/v2.11/providers/docker/#defaultrule
+  #
+  # This rule translate task name to domain like a:
+  #
+  #  mystack_myservice => myservice-mystack.devel.xoob.gg:
+  #   {{ .Name | replace (list (index .Labels "com.docker.stack.namespace") "-" | join "") "" }}-{{ index .Labels "com.docker.stack.namespace" }}.devel.xoob.gg
+  #
+  #  mystack_myservice => mystack.devel.xoob.gg:
+  #   {{ index .Labels "com.docker.stack.namespace" }}.devel.xoob.gg
+  #
+  defaultRule = "Host(`{{ index .Labels \"com.docker.stack.namespace\" }}.devel.xoob.gg`)"
+  #
+  # Activates the Swarm Mode (instead of standalone Docker).
+  # https://doc.traefik.io/traefik/v2.11/providers/docker/#swarmmode
+  #
+  swarmMode = true
+  #
+  # Defines the polling interval (in seconds) for Swarm Mode.
+  # https://doc.traefik.io/traefik/v2.11/providers/docker/#swarmmoderefreshseconds
+  #
+  swarmModeRefreshSeconds = "5s"
+
+[api]
+    insecure = false
+    dashboard = true
+    #  debug = true
+
+[entryPoints]
+    [entryPoints.web]
+        address = "0.0.0.0:80"
+        # https://doc.traefik.io/traefik/v2.11/routing/entrypoints/#forwarded-headers
+        [entryPoints.web.forwardedHeaders]
+            insecure = true
+        [entryPoints.web.transport]
+            [entryPoints.web.transport.respondingTimeouts]
+                readTimeout = "900s"
+                writeTimeout = "900s"
+                idleTimeout = "300s"
+    [entryPoints.websecure]
+        address = "0.0.0.0:443"
+        # https://doc.traefik.io/traefik/v2.11/routing/entrypoints/#forwarded-headers
+        [entryPoints.websecure.forwardedHeaders]
+            insecure = true
+        [entryPoints.websecure.proxyProtocol]
+            # See https://www.cloudflare.com/en-gb/ips/
+            trustedIPs = [
+                "173.245.48.0/20",
+                "103.21.244.0/22",
+                "103.22.200.0/22",
+                "103.31.4.0/22",
+                "141.101.64.0/18",
+                "108.162.192.0/18",
+                "190.93.240.0/20",
+                "188.114.96.0/20",
+                "197.234.240.0/22",
+                "198.41.128.0/17",
+                "162.158.0.0/15",
+                "104.16.0.0/13",
+                "104.24.0.0/14",
+                "172.64.0.0/13",
+                "131.0.72.0/22"
+            ]
+        [entryPoints.websecure.http.tls]
+            certResolver = "defaultCertificatesResolver"
+            [[entryPoints.websecure.http.tls.domains]]
+                main = "devel.xoob.gg"
+                sans = ["*.devel.xoob.gg"]
+            [[entryPoints.websecure.http.tls.domains]]
+                main = "test.xoob.gg"
+                sans = ["*.test.xoob.gg"]
+            [[entryPoints.websecure.http.tls.domains]]
+                main = "presentation.xoob.gg"
+                sans = ["*.presentation.xoob.gg"]
+            [[entryPoints.websecure.http.tls.domains]]
+                main = "evolution.xoob.gg"
+                sans = ["*.evolution.xoob.gg"]
+        [entryPoints.websecure.transport]
+            [entryPoints.websecure.transport.respondingTimeouts]
+                readTimeout = "900s"
+                writeTimeout = "900s"
+                idleTimeout = "300s"
+        # https://doc.traefik.io/traefik/v2.11/routing/entrypoints/#middlewares
+        [entryPoints.websecure.http]
+            middlewares = [
+                "remove-header-x-real-ip@file", # Remove buggy X-Real-IP header. See https://github.com/traefik/traefik/issues/8497
+            ]
+    [entryPoints.metrics]
+        address = "0.0.0.0:9323"
+        [entryPoints.metrics.transport]
+            [entryPoints.metrics.transport.respondingTimeouts]
+                readTimeout = "60s"
+                writeTimeout = "60s"
+                idleTimeout = "180s"
+
+[metrics]
+    [metrics.prometheus]
+        entryPoint = "metrics"
+
+[certificatesResolvers]
+    [certificatesResolvers.defaultCertificatesResolver.acme]
+        email = "theanurin@gmail.com"
+        storage = "/traefik-data/cloudflare-acme.json"
+
+        # CA server to use.
+        # Uncomment the line to use Let's Encrypt's staging server,
+        # leave commented to go to prod.
+        #
+        # Optional
+        # Default: "https://acme-v02.api.letsencrypt.org/directory"
+        #
+        #caServer = "https://acme-staging-v02.api.letsencrypt.org/directory"
+
+        # # https://doc.traefik.io/traefik/v2.11/https/acme/#httpchallenge
+        # # This provider allows to make HTTP-01 challenge.
+        # # Traefik must be reachable by Let's Encrypt through port 80
+        # [certificatesResolvers.defaultCertificatesResolver.acme.httpChallenge]
+        #     entryPoint = "web"
+
+        # # https://doc.traefik.io/traefik/v2.11/https/acme/#tlschallenge
+        # # This provider allows to make TLS-ALPN-01 challenge.
+        # # Traefik must be reachable by Let's Encrypt through port 443
+        # [certificatesResolvers.defaultCertificatesResolver.acme.tlsChallenge]
+
+        # https://doc.traefik.io/traefik/v2.11/https/acme/#dnschallenge
+        # Use the DNS-01 challenge to generate and renew ACME certificates by
+        # provisioning a DNS record.
+        [certificatesResolvers.defaultCertificatesResolver.acme.dnsChallenge]
+            provider = "cloudflare"
+            delayBeforeCheck = 0

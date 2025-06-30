@@ -1,13 +1,13 @@
-name: "Delivery: HAProxy"
+name: "Delivery: Traefik"
 
 on:
   push:
     tags:
-      - 'haproxy*'
+      - 'traefik*'
     branches:
-      - 'haproxy*'
+      - 'traefik*'
 
-run-name: "Delivery: HAProxy (${{ github.ref_name }})"
+run-name: "Delivery: Traefik (${{ github.ref_name }})"
 
 env:
   DEPLOYMENT_STACK_NAME: "cluster"
@@ -23,7 +23,7 @@ jobs:
         run: |
           set -eo pipefail
           if [ "${{ github.ref_type }}" == "tag" ]; then
-            if ! echo -n "${{ github.ref_name }}" | egrep -qe '(haproxy[a-z]*)-20[2-9][5-9][0-9][0-9][0-9][0-9][0-9]?[0-9]?[0-9]?[0-9]?[0-9]?[0-9]?(-rc[0-9]+)?$'; then
+            if ! echo -n "${{ github.ref_name }}" | egrep -qe '(traefik[a-z]*)-20[2-9][5-9][0-9][0-9][0-9][0-9][0-9]?[0-9]?[0-9]?[0-9]?[0-9]?[0-9]?(-rc[0-9]+)?$'; then
               echo "Wrong tag name '${{ github.ref_name }}'." >&2
               exit 1
             fi

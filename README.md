@@ -1,6 +1,6 @@
-# HAProxy Deployment
+# Traefik Deployment
 
-- Upstream of this branch is https://github.com/edgebus/deployment-docker-swarm/tree/haproxy%23main
+- Upstream of this branch is https://github.com/edgebus/deployment-docker-swarm/tree/traefik%23main
 - How to use [EdgeBus Ops](https://docs.edgebus.io/ops/swarm) for Docker Swarm
 
 ![Diagram](docs/diagram.drawio.svg)
@@ -16,21 +16,21 @@ To launch automated deploy (via your CI/CD platform) use:
 
 |                   | Format                                | What to deploy                                               |
 | ----------------- | ------------------------------------- | ------------------------------------------------------------ |
-| Release Candidate | `haproxy[a-z]*-YYYYMMDDhhmmss-rcXxxx` | create deploy pipelines against ALL (except `prod`) clusters |
-| Release           | `haproxy[a-z]*-YYYYMMDDhhmmss`        | create deploy pipelines against ALL clusters                 |
+| Release Candidate | `traefik[a-z]*-YYYYMMDDhhmmss-rcXxxx` | create deploy pipelines against ALL (except `prod`) clusters |
+| Release           | `traefik[a-z]*-YYYYMMDDhhmmss`        | create deploy pipelines against ALL clusters                 |
 
 Examples:
 
-- `haproxysomething-20250503-rc000`
-- `haproxysomething-20250503-rc00`
-- `haproxysomething-20250503-rc0`
-- `haproxysomething-2025050323-rc0`
-- `haproxysomething-202505032359-rc0`
-- `haproxysomething-20250503235959-rc0`
-- `haproxysomething-20250503`
-- `haproxysomething-2025050323`
-- `haproxysomething-202505032359`
-- `haproxysomething-20250503235959`
+- `traefiksomething-20250503-rc000`
+- `traefiksomething-20250503-rc00`
+- `traefiksomething-20250503-rc0`
+- `traefiksomething-2025050323-rc0`
+- `traefiksomething-202505032359-rc0`
+- `traefiksomething-20250503235959-rc0`
+- `traefiksomething-20250503`
+- `traefiksomething-2025050323`
+- `traefiksomething-202505032359`
+- `traefiksomething-20250503235959`
 
 ### Commits
 
@@ -65,6 +65,7 @@ Commits trigger deploy to **devel** cluster ONLY.
       --env DEPLOYMENT_JOB_ID \
       --env DEPLOYMENT_PIPELINE_URL \
       --env DEPLOYMENT_VERSION \
+      --env DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS="" \
       theanurin/configuration-templates:20250503 \
          --engine mustache \
          --config-file="/tmp/MANIFEST" \
@@ -83,13 +84,13 @@ Commits trigger deploy to **devel** cluster ONLY.
 1. Deploy stack
    ```shell
    export DOCKER_HOST=unix://$HOME/tmp/docker-swarm.sock
-   docker stack deploy --compose-file stack.local.yml  "${DEPLOYMENT_STACK_NAME}"
+   docker stack deploy --detach=false --compose-file stack.local.yml  "${DEPLOYMENT_STACK_NAME}"
    ```
 1. Monitoring
    ```shell
    export DOCKER_HOST=unix://$HOME/tmp/docker-swarm.sock
    docker stack ps               "${DEPLOYMENT_STACK_NAME}"
-   docker service logs --follow  "${DEPLOYMENT_STACK_NAME}_haproxy"
+   docker service logs --follow  "${DEPLOYMENT_STACK_NAME}traefik"
    ```
 
 ## Setup
@@ -98,15 +99,15 @@ Commits trigger deploy to **devel** cluster ONLY.
    ```shell
    TBD
    ```
-1. Configure HAProxy
+1. Configure Traefik
    ```shell
-   cp -a etc/haproxy.cfg-example etc/haproxy.cfg
-   vi etc/haproxy.cfg # modify for yourself
+   cp -a etc/traefik.cfg-example etc/traefik.cfg
+   vi etc/traefik.cfg # modify for yourself
    ```
 1. Commit changes and see for CD pipeline for deployment into `devel` cluster
 1. Test Release Candidates to deploy pipelines against ALL (except `prod`) clusters
-   1. Make tag in format `haproxy[a-z]*-rcXX`
+   1. Make tag in format `traefik[a-z]*-rcXX`
    1. Start pipeline against the tag in your CI/CD platform
 1. Test Release to deploy pipelines against ALL clusters
-   1. Make tag in format `haproxy[a-z]*-YYYYMMDDxx`
+   1. Make tag in format `traefik[a-z]*-YYYYMMDDxx`
    1. Start pipeline against the tag in your CI/CD platform

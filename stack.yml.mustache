@@ -1,13 +1,13 @@
 version: "3.9"
 
 configs:
-  haproxy.cfg:
-    name: {{name}}.cfg-{{DEPLOYMENT_JOB_ID}}
+  docker-expand-envs-entrypoint.sh:
+    name: {{name}}.sh-{{DEPLOYMENT_JOB_ID}}
 {{#DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
     external: true
 {{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
 {{^DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-    file: ./etc/{{DEPLOYMENT_CLUSTER}}/haproxy.cfg
+    file: ./misc/docker-expand-envs-entrypoint.sh
     labels:
       - "io.edgebus.ops=true"
       - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
@@ -16,6 +16,46 @@ configs:
       - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
       - "{{label.version}}={{DEPLOYMENT_VERSION}}"
 {{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+  traefik.toml:
+    name: {{name}}.toml-{{DEPLOYMENT_JOB_ID}}
+{{#DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    external: true
+{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{^DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    file: ./etc/{{DEPLOYMENT_CLUSTER}}/traefik.toml
+    labels:
+      - "io.edgebus.ops=true"
+      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
+{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+  traefik-dynamic.toml:
+    name: {{name}}-dynamic.toml-{{DEPLOYMENT_JOB_ID}}
+{{#DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    external: true
+{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{^DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    file: ./etc/{{DEPLOYMENT_CLUSTER}}/traefik-dynamic.toml
+    labels:
+      - "io.edgebus.ops=true"
+      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
+{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+
+volumes:
+  traefik:
+    labels:
+      - "io.edgebus.ops=true"
+      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
 
 networks:
   internet-access:
@@ -37,13 +77,32 @@ networks:
 
 services:
   {{name}}:
-    image: haproxy:3.0.10
+    image: theanurin/traefik:2.11.18-0
+    entrypoint:
+      - /usr/local/bin/docker-expand-envs-entrypoint.sh
+      - /entrypoint.sh
+      - traefik
+    ports:
+{{#traefik.entryPoints.$array}}
+      - published: {{port}}
+        target: {{port}}
+        protocol: {{protocol}}
+        mode: host
+{{/traefik.entryPoints.$array}}
+    volumes:
+      - traefik:/traefik-data
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     configs:
-      - source: haproxy.cfg
-        target: /usr/local/etc/haproxy/haproxy.cfg
+      - source: docker-expand-envs-entrypoint.sh
+        target: /usr/local/bin/docker-expand-envs-entrypoint.sh
+        mode: 0755
+      - source: traefik.toml
+        target: /etc/traefik/traefik.toml
         mode: 0644
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - source: traefik-dynamic.toml
+        target: /etc/traefik/traefik-dynamic.toml
+        mode: 0644
     networks:
       internet-access: # Access to external Redis instance
 {{#network.$array}}

@@ -1,7 +1,7 @@
 #
 # Define a set of swarm networks to be attached to the service
 #
-#network.0=...
+#network.0=traefik-tier
 #...
 #network.z=...
 
@@ -30,12 +30,12 @@
 #
 # Name of service
 #
-name=haproxy
+name=traefik
 
 #
 # Network alias
 #
-alias=haproxy
+alias=traefik
 
 #
 # Number of replicas
@@ -89,3 +89,15 @@ resources.limits.memory=64M
 # Enum: start-first, stop-first
 #
 deploy.update_config.order=start-first
+
+#
+# Port on which to listen for incoming connections and packets
+#
+traefik.entryPoints.web.port=80
+#
+# Protocol to use (tcp or udp)
+#
+traefik.entryPoints.web.protocol=tcp
+
+#traefik.entryPoints.websecure.port=433
+#traefik.entryPoints.websecure.protocol=tcp
