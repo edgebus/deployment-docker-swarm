@@ -1,0 +1,97 @@
+[http]
+
+  [http.middlewares]
+
+    [http.middlewares.force-ssl]
+
+      [http.middlewares.force-ssl.redirectScheme]
+        # Redirect to https
+        scheme = "https"
+        permanent = true
+        port = "443"
+
+      [http.middlewares.cors-anywhere]
+
+        [http.middlewares.cors-anywhere.headers]
+          # https://doc.traefik.io/traefik/v2.11/middlewares/headers/#cors-headers
+          accessControlAllowMethods = ["*"]
+          accessControlAllowHeaders = ["*"]
+          accessControlAllowOriginList = ["*"]
+          accessControlMaxAge = 100
+          addVaryHeader = true
+
+    # Accepts request from defined IP
+    # https://doc.traefik.io/traefik/v2.11/middlewares/http/ipallowlist/
+    [http.middlewares.internal-ips.ipAllowList]
+      sourceRange = [
+        # https://t.me/theanurin - office01
+        "77.120.224.121",
+        # https://t.me/tkandr
+        "77.237.229.57",
+        # https://t.me/sergeynovozhylov
+        "89.155.192.0/18",
+        # https://t.me/theanurin - home (Мозеса Гомберга 66, seti.kr.ua)
+        "91.202.132.0/22",
+        # https://t.me/theanurin - home (Київ, Соборна 126/20, Corbina)
+        "91.210.248.0/22",
+        # https://t.me/tkandr
+        "93.105.0.0/16",
+        # https://t.me/theanurin - home (Гагаріна 12, Kyivstar)
+        "188.163.0.0/17",
+        # https://t.me/theanurin - office02
+        "193.238.36.205",
+      ]
+    [http.middlewares.remove-header-x-real-ip.headers]
+      [http.middlewares.remove-header-x-real-ip.headers.customRequestHeaders]
+        # https://doc.traefik.io/traefik/v2.11/middlewares/http/headers/#customrequestheaders
+        "X-Real-IP" = "" # Remove buggy X-Real-IP header. See https://github.com/traefik/traefik/issues/8497
+
+  [http.routers.dashboard]
+    rule = "Host(`traefik.prod.xoob.gg`)"
+    service = "api@internal"
+    entrypoints = ["websecure"]
+    middlewares = ["internal-ips"]
+    [http.routers.dashboard.tls]
+      certResolver = "defaultCertificatesResolver"
+      [[http.routers.dashboard.tls.domains]]
+        main = "prod.xoob.gg"
+        sans = ["*.prod.xoob.gg"]
+
+  # # Configure Legacy Instance (that hosted as a docker container outside of Docker Swarm)
+  # [http.services.legacy-game-api.loadBalancer]
+  #   [[http.services.legacy-game-api.loadBalancer.servers]]
+  #     url = "http://instance-legacy-api:3000/"
+  # [http.routers.instance-legacy_http]
+  #   rule = "Host(`game-api-v2.xoob.gg`)"
+  #   service = "legacy-game-api@file"
+  #   entrypoints = ["web"]
+  #   priority = 1
+  # [http.routers.instance-legacy_https]
+  #   rule = "Host(`game-api-v2.xoob.gg`)"
+  #   service = "legacy-game-api@file"
+  #   entrypoints = ["websecure"]
+  #   priority = 1
+  #   [http.routers.instance-legacy_https.tls]
+  #     certResolver = "defaultCertificatesResolver"
+
+  # Reverse proxy to Nginx
+  [http.services.standalone-nginx.loadBalancer]
+    passHostHeader = true
+    serversTransport = "standalone-nginx-transport"
+    # https://doc.traefik.io/traefik/v2.11/routing/services/#servers
+    [[http.services.standalone-nginx.loadBalancer.servers]]
+      url = "https://65.21.29.188:8443/"
+  [http.routers.standalone-nginx_http]
+    rule = "Host(`game.xoob.gg`) || Host(`game-api.xoob.gg`)"
+    service = "standalone-nginx@file"
+    entrypoints = ["web"]
+    priority = 1
+  [http.routers.standalone-nginx_https]
+    rule = "Host(`game.xoob.gg`) || Host(`game-api.xoob.gg`)"
+    service = "standalone-nginx@file"
+    entrypoints = ["websecure"]
+    priority = 1
+    [http.routers.standalone-nginx_https.tls]
+      certResolver = "defaultCertificatesResolver"
+  [http.serversTransports.standalone-nginx-transport]
+    insecureSkipVerify = true
