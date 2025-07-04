@@ -1,21 +1,15 @@
+{{#portainer}}
 version: "3.9"
 
-configs:
-  haproxy.cfg:
-    name: {{name}}.cfg-{{DEPLOYMENT_JOB_ID}}
-{{#DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-    external: true
-{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-{{^DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-    file: ./etc/{{DEPLOYMENT_CLUSTER}}/haproxy.cfg
+volumes:
+  portainer-data:
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
-{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
 
 networks:
   internet-access:
@@ -28,42 +22,59 @@ networks:
     internal: true
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{$root.label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{$root.label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{$root.label.version}}={{DEPLOYMENT_VERSION}}"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
 {{/network.$array}}
+  portainer-agent-tier:
+    driver: overlay
+    attachable: false
+    internal: true
+    labels:
+      - "io.edgebus.ops=true"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
 
 services:
   {{name}}:
-    image: haproxy:3.0.10
-    configs:
-      - source: haproxy.cfg
-        target: /usr/local/etc/haproxy/haproxy.cfg
-        mode: 0644
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    image: theanurin/portainer:2.20.1-0
     networks:
       internet-access: # Access to external Redis instance
 {{#network.$array}}
       {{ . }}:
         aliases:
-          - {{$root.alias}}
+          - {{alias}}
 {{/network.$array}}
+{{#expose.?publish}}
+    ports:
+      - "{{host}}:{{port}}:9000/tcp"
+{{/expose.?publish}}
+    volumes:
+      - portainer-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -H tcp://tasks.portainer-agent:9001 --tlsskipverify
+    environment:
+      PORTAINER_LIGHT_BG_COLOR: '#C4A484'
+      PORTAINER_DARK_BG_COLOR: '#C4A484'
+      PORTAINER_HIGH_BG_COLOR: '#C4A484'
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
-    logging:
-      driver: local
-      options:
-        compress: "false"
-        max-size: "50m"
-        max-file: 5
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9000"]
+      interval: 5s
+      retries: 10
+      start_period: 10s
+      timeout: 10s
 {{#ulimits}}
     ulimits: # overrides the default ulimits for a container.
       nproc: {{nproc}} # processes/threads
@@ -74,21 +85,7 @@ services:
       {{/nofile}}
 {{/ulimits}}
     deploy:
-      mode: "replicated"
-      replicas: {{replicas}}
-      resources: # configures physical resource constraints for container to run on platform.
-{{#resources}}
-{{#limits}}
-        limits:          # The platform must prevent the container to allocate more.
-          cpus: "{{cpus}}" # how much of the available CPU resources, as number of cores, a container can use.
-          memory: "{{memory}}" # amount of memory a container can allocate
-{{/limits}}
-{{#reservations}}
-        reservations:    # The platform must guarantee the container can allocate at least the configured amount.
-          cpus: "{{cpus}}" # how much of the available CPU resources, as number of cores, a container can use.
-          memory: "{{memory}}" # amount of memory a container can allocate
-{{/reservations}}
-{{/resources}}
+      mode: "global"
       placement:
         constraints:
           - node.labels.io.edgebus.ops==true
@@ -117,3 +114,95 @@ services:
         max_attempts: 2
         # How long to wait before deciding if a restart has succeeded
         window: 120s
+      labels:
+        - "traefik.enable=true"
+        - "traefik.scope=apps"
+        - "traefik.docker.network=cluster_portainer-tier"
+
+        - "traefik.http.services.cluster_portainer.loadbalancer.server.port=9000"
+
+{{#expose.?lb}}
+{{#?http}}
+        # HTTP
+        - "traefik.http.routers.cluster_portainer-http.rule=Host(`{{domain}}`)"
+        - "traefik.http.routers.cluster_portainer-http.service=cluster_portainer"
+        - "traefik.http.routers.cluster_portainer-http.entrypoints={{entrypoints}}"
+        - "traefik.http.routers.cluster_portainer-http.middlewares={{middlewares}}"
+{{/?http}}
+{{#?https}}
+        # HTTPS
+        - "traefik.http.routers.cluster_portainer-https.rule=Host(`{{domain}}`)"
+        - "traefik.http.routers.cluster_portainer-https.service=cluster_portainer"
+        - "traefik.http.routers.cluster_portainer-https.entrypoints={{entrypoints}}"
+        - "traefik.http.routers.cluster_portainer-https.middlewares={{middlewares}}"
+        - "traefik.http.routers.cluster_portainer-https.tls=true"
+        - "traefik.http.routers.cluster_portainer-https.tls.certresolver={{certresolver}}"
+{{#domains.$array}}
+        - "traefik.http.routers.cluster_portainer-https.tls.domains[{{index}}].main={{main}}"
+        - "traefik.http.routers.cluster_portainer-https.tls.domains[{{index}}].sans={{sans}}"
+{{/domains.$array}}
+{{/?https}}
+{{/expose.?lb}}
+
+  # Portainer Agents
+  portainer-agent:
+    image: portainer/agent:2.20.1
+    # environment:
+    #   AGENT_CLUSTER_ADDR: tasks.portainer-agent # Should be "tasks.<service_name>" (Address used by each agent to form a cluster)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - portainer-agent-tier
+    labels:
+      - "io.edgebus.ops=true"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
+    logging:
+      driver: local
+      options:
+        compress: "false"
+        max-size: "50m"
+        max-file: 5
+{{#ulimits}}
+    ulimits: # overrides the default ulimits for a container.
+      nproc: {{nproc}} # processes/threads
+      {{#nofile}}
+      nofile: # file descriptors
+        soft: {{soft}} # may be changed later, up to the hard limit value, by the process running with these limits
+        hard: {{hard}} # maximum number of opened files
+      {{/nofile}}
+{{/ulimits}}
+    deploy:
+      mode: "global"
+      placement:
+        constraints:
+          - node.labels.io.edgebus.ops==true
+{{#placement_constraint.$array}}
+          - node.labels.{{ . }}==true
+{{/placement_constraint.$array}}
+      # How the service should be updated
+      update_config:
+        # The number of containers to update at a time.
+        parallelism: 1
+        # Order of operations during updates
+        order: {{deploy.update_config.order}}
+        # What to do if an update fails
+        failure_action: pause
+        # The time to wait between updating a group of containers
+        delay: 10s
+        # Duration after each task update to monitor for failure
+        monitor: 5s
+      # If and how to restart containers when they exit.
+      restart_policy:
+        # containers are restarted regardless of the exit status
+        condition: any
+        # How long to wait between restart attempts
+        delay: 30s
+        # How many times to attempt to restart a container before giving up
+        max_attempts: 2
+        # How long to wait before deciding if a restart has succeeded
+        window: 120s
+{{/portainer}}

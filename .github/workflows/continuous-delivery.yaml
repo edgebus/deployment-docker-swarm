@@ -105,24 +105,6 @@ jobs:
       - name: "Generate stack.yml"
         run: |
           set -eo pipefail
-          DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS=""
-          COUNT_EXISTING_CONFIGS=$(docker config ls --format "{{.ID}}" \
-            --filter "label=com.docker.stack.namespace=${{ env.DEPLOYMENT_STACK_NAME }}" \
-            --filter "label=io.edgebus.ops.commit=${{ env.DEPLOYMENT_COMMIT }}" \
-            --filter "label=io.edgebus.ops.atom.${{ matrix.environment }}.${{steps.resolve_deployment_service_name.outputs.DEPLOYMENT_SERVICE_NAME}}=true" \
-            | wc --lines \
-          )
-          COUNT_EXISTING_SECRETS=$(docker secret ls --format "{{.ID}}" \
-            --filter "label=com.docker.stack.namespace=${{ env.DEPLOYMENT_STACK_NAME }}" \
-            --filter "label=io.edgebus.ops.commit=${{ env.DEPLOYMENT_COMMIT }}" \
-            --filter "label=io.edgebus.ops.atom.${{ matrix.environment }}.${{steps.resolve_deployment_service_name.outputs.DEPLOYMENT_SERVICE_NAME}}=true" \
-            | wc --lines \
-          )
-          if [ "${COUNT_EXISTING_CONFIGS}" -gt 0 -o "${COUNT_EXISTING_SECRETS}" -gt 0 ]; then
-            echo "WARN: This is rollback deployment, so redefine all configs/secrets as external ..."
-
-            DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS=true
-          fi
           cat stack.yml.mustache | \
             docker run \
               --interactive \
@@ -131,7 +113,6 @@ jobs:
               --mount "type=bind,source=${PWD}/MANIFEST-${{ matrix.environment }},target=/tmp/MANIFEST-${{ matrix.environment }}" \
               --env DEPLOYMENT_CLUSTER="${{ matrix.environment }}" \
               --env DEPLOYMENT_COMMIT \
-              --env DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS="${DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}" \
               --env DEPLOYMENT_JOB_ID="${{steps.resolve_deployment_job_id.outputs.DEPLOYMENT_JOB_ID}}" \
               --env DEPLOYMENT_PIPELINE_URL \
               --env DEPLOYMENT_VERSION \
