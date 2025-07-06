@@ -1,0 +1,42 @@
+global
+    log stdout format raw local0
+    maxconn 4096
+
+defaults
+    log global
+    mode tcp
+    timeout connect 30s
+    timeout client 180s
+    timeout server 180s
+
+#
+# MySQL proxy
+#
+#frontend frontend_mysql
+#    bind *:3306
+#    default_backend backend_mysql
+#
+#backend backend_mysql
+#    server mysql_server host.docker.internal:3306 check
+
+
+#
+# PostgreSQL proxy
+#
+#frontend frontend_postgresql
+#    bind *:5432
+#    default_backend backend_postgresql
+#
+#backend backend_postgresql
+#    server postgresql_server host.docker.internal:5432 check
+
+
+#
+# Redis proxy
+#
+#frontend frontend_redis
+#    bind *:6379
+#    default_backend backend_redis
+#
+#backend backend_redis
+#    server redis_server host.docker.internal:6379 check
