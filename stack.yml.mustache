@@ -1,0 +1,119 @@
+version: "3.9"
+
+configs:
+  haproxy.cfg:
+    name: {{name}}.cfg-{{DEPLOYMENT_JOB_ID}}
+{{#DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    external: true
+{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{^DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    file: ./etc/{{DEPLOYMENT_CLUSTER}}/haproxy.cfg
+    labels:
+      - "io.edgebus.ops=true"
+      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
+{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+
+networks:
+  internet-access:
+    name: bridge
+    external: true
+{{#network.$array}}
+  {{ . }}:
+    driver: overlay
+    attachable: false
+    internal: true
+    labels:
+      - "io.edgebus.ops=true"
+      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
+      - "{{$root.label.commit}}={{DEPLOYMENT_COMMIT}}"
+      - "{{$root.label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
+      - "{{$root.label.version}}={{DEPLOYMENT_VERSION}}"
+{{/network.$array}}
+
+services:
+  {{name}}:
+    image: haproxy:3.0.10
+    configs:
+      - source: haproxy.cfg
+        target: /usr/local/etc/haproxy/haproxy.cfg
+        mode: 0644
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      internet-access: # Access to external Redis instance
+{{#network.$array}}
+      {{ . }}:
+        aliases:
+          - {{$root.alias}}
+{{/network.$array}}
+    labels:
+      - "io.edgebus.ops=true"
+      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
+    logging:
+      driver: local
+      options:
+        compress: "false"
+        max-size: "50m"
+        max-file: 5
+{{#ulimits}}
+    ulimits: # overrides the default ulimits for a container.
+      nproc: {{nproc}} # processes/threads
+      {{#nofile}}
+      nofile: # file descriptors
+        soft: {{soft}} # may be changed later, up to the hard limit value, by the process running with these limits
+        hard: {{hard}} # maximum number of opened files
+      {{/nofile}}
+{{/ulimits}}
+    deploy:
+      mode: "replicated"
+      replicas: {{replicas}}
+      resources: # configures physical resource constraints for container to run on platform.
+{{#resources}}
+{{#limits}}
+        limits:          # The platform must prevent the container to allocate more.
+          cpus: "{{cpus}}" # how much of the available CPU resources, as number of cores, a container can use.
+          memory: "{{memory}}" # amount of memory a container can allocate
+{{/limits}}
+{{#reservations}}
+        reservations:    # The platform must guarantee the container can allocate at least the configured amount.
+          cpus: "{{cpus}}" # how much of the available CPU resources, as number of cores, a container can use.
+          memory: "{{memory}}" # amount of memory a container can allocate
+{{/reservations}}
+{{/resources}}
+      placement:
+        constraints:
+          - node.labels.io.edgebus.ops==true
+{{#placement_constraint.$array}}
+          - node.labels.{{ . }}==true
+{{/placement_constraint.$array}}
+      # How the service should be updated
+      update_config:
+        # The number of containers to update at a time.
+        parallelism: 1
+        # Order of operations during updates
+        order: {{deploy.update_config.order}}
+        # What to do if an update fails
+        failure_action: pause
+        # The time to wait between updating a group of containers
+        delay: 10s
+        # Duration after each task update to monitor for failure
+        monitor: 5s
+      # If and how to restart containers when they exit.
+      restart_policy:
+        # containers are restarted regardless of the exit status
+        condition: any
+        # How long to wait between restart attempts
+        delay: 30s
+        # How many times to attempt to restart a container before giving up
+        max_attempts: 2
+        # How long to wait before deciding if a restart has succeeded
+        window: 120s

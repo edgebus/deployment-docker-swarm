@@ -1,0 +1,160 @@
+name: "Delivery: HAProxy"
+
+on:
+  push:
+    tags:
+      - 'haproxy*'
+    branches:
+      - 'haproxy*'
+
+run-name: "Delivery: HAProxy (${{ github.ref_name }})"
+
+env:
+  DEPLOYMENT_STACK_NAME: "cluster"
+  DEPLOYMENT_COMMIT: "${{ github.sha }}"
+  DEPLOYMENT_PIPELINE_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+  DEPLOYMENT_VERSION: "${{ github.ref_type == 'tag' && github.ref_name || github.sha }}"
+
+jobs:
+  guards:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate tag name
+        run: |
+          set -eo pipefail
+          if [ "${{ github.ref_type }}" == "tag" ]; then
+            if ! echo -n "${{ github.ref_name }}" | egrep -qe '(haproxy[a-z]*)-20[2-9][5-9][0-9][0-9][0-9][0-9][0-9]?[0-9]?[0-9]?[0-9]?[0-9]?[0-9]?(-rc[0-9]+)?$'; then
+              echo "Wrong tag name '${{ github.ref_name }}'." >&2
+              exit 1
+            fi
+          fi
+
+  read-environments:
+    # https://github.com/orgs/community/discussions/49684#discussioncomment-9374302
+    needs:
+      - guards
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    permissions:
+      actions: read
+    outputs:
+      environments: ${{ steps.set_env.outputs.environments }}
+    steps:
+      - name: Get environments
+        uses: octokit/request-action@v2.3.0
+        id: get_env
+        with:
+          route: GET /repos/${{ github.repository }}/environments?per_page=100 # If we ever have >100 deployments, we'll need to paginate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set output
+        id: set_env
+        run: |
+          set -eo pipefail
+          if [ "${{ github.ref_type }}" != "tag" ]; then
+            ENVIRONMENTS=$(echo ${ENVIRONMENTS} | jq 'del(.[] | select(. == "prod"))')
+          else
+            if echo -n "${{ github.ref_name }}" | egrep -qe '-rc[0-9]+$'; then
+              ENVIRONMENTS=$(echo ${ENVIRONMENTS} | jq 'del(.[] | select(. == "prod"))')
+            fi
+          fi
+          echo "environments=$(echo ${ENVIRONMENTS} | jq -c)" | tee -a "${GITHUB_OUTPUT}"
+        env:
+          ENVIRONMENTS: ${{ toJson(fromJson(steps.get_env.outputs.data).environments.*.name) }}
+
+  deploy:
+    needs:
+      - read-environments
+    strategy:
+      matrix:
+        environment: ${{ fromJSON(needs.read-environments.outputs.environments) }}
+    runs-on:
+      - self-hosted
+      - docker-swarm
+      - cluster:${{ matrix.environment }}
+    environment:
+      name: ${{ matrix.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Resolve DEPLOYMENT_JOB_ID
+        id: resolve_deployment_job_id
+        run: |
+          set -eo pipefail
+          DEPLOYMENT_JOB_ID="$(echo "${{ github.sha }}" | head -c 8)"
+          echo "DEPLOYMENT_JOB_ID=${DEPLOYMENT_JOB_ID}" | tee -a "${GITHUB_OUTPUT}"
+
+      - name: Resolve DEPLOYMENT_SERVICE_NAME
+        id: resolve_deployment_service_name
+        run: |
+          set -eo pipefail
+          DEPLOYMENT_SERVICE_NAME=$(echo -n "{{ name }}" | \
+            docker run \
+              --interactive \
+              --rm \
+              --mount "type=bind,source=${PWD}/MANIFEST,target=/tmp/MANIFEST" \
+              --mount "type=bind,source=${PWD}/MANIFEST-${{ matrix.environment }},target=/tmp/MANIFEST-${{ matrix.environment }}" \
+              theanurin/configuration-templates:20250503 \
+                --engine mustache \
+                --config-file="/tmp/MANIFEST" \
+                --config-file="/tmp/MANIFEST-${{ matrix.environment }}"
+          )
+          echo "DEPLOYMENT_SERVICE_NAME=${DEPLOYMENT_SERVICE_NAME}" | tee -a "${GITHUB_OUTPUT}"
+
+      - name: "Generate stack.yml"
+        run: |
+          set -eo pipefail
+          DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS=""
+          COUNT_EXISTING_CONFIGS=$(docker config ls --format "{{.ID}}" \
+            --filter "label=com.docker.stack.namespace=${{ env.DEPLOYMENT_STACK_NAME }}" \
+            --filter "label=io.edgebus.ops.commit=${{ env.DEPLOYMENT_COMMIT }}" \
+            --filter "label=io.edgebus.ops.atom.${{ matrix.environment }}.${{steps.resolve_deployment_service_name.outputs.DEPLOYMENT_SERVICE_NAME}}=true" \
+            | wc --lines \
+          )
+          COUNT_EXISTING_SECRETS=$(docker secret ls --format "{{.ID}}" \
+            --filter "label=com.docker.stack.namespace=${{ env.DEPLOYMENT_STACK_NAME }}" \
+            --filter "label=io.edgebus.ops.commit=${{ env.DEPLOYMENT_COMMIT }}" \
+            --filter "label=io.edgebus.ops.atom.${{ matrix.environment }}.${{steps.resolve_deployment_service_name.outputs.DEPLOYMENT_SERVICE_NAME}}=true" \
+            | wc --lines \
+          )
+          if [ "${COUNT_EXISTING_CONFIGS}" -gt 0 -o "${COUNT_EXISTING_SECRETS}" -gt 0 ]; then
+            echo "WARN: This is rollback deployment, so redefine all configs/secrets as external ..."
+
+            DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS=true
+          fi
+          cat stack.yml.mustache | \
+            docker run \
+              --interactive \
+              --rm \
+              --mount "type=bind,source=${PWD}/MANIFEST,target=/tmp/MANIFEST" \
+              --mount "type=bind,source=${PWD}/MANIFEST-${{ matrix.environment }},target=/tmp/MANIFEST-${{ matrix.environment }}" \
+              --env DEPLOYMENT_CLUSTER="${{ matrix.environment }}" \
+              --env DEPLOYMENT_COMMIT \
+              --env DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS="${DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}" \
+              --env DEPLOYMENT_JOB_ID="${{steps.resolve_deployment_job_id.outputs.DEPLOYMENT_JOB_ID}}" \
+              --env DEPLOYMENT_PIPELINE_URL \
+              --env DEPLOYMENT_VERSION \
+              theanurin/configuration-templates:20250503 \
+                --engine mustache \
+                --config-file="/tmp/MANIFEST" \
+                --config-file="/tmp/MANIFEST-${{ matrix.environment }}" \
+                --config-env \
+            | tee stack-${{ matrix.environment }}.yml
+
+      - name: "Upload stack.yml"
+        id: artifact-upload-step
+        uses: actions/upload-artifact@v4
+        with:
+          name: stack-${{ matrix.environment }}
+          path: stack-${{ matrix.environment }}.yml
+          compression-level: 0 # no compression
+          retention-days: ${{ matrix.environment == 'prod' && 90 || 7 }}
+
+      - name: "Deploy"
+        run: |
+          set -e
+          docker stack deploy \
+            --detach=false \
+            --compose-file stack-${{ matrix.environment }}.yml \
+            "${DEPLOYMENT_STACK_NAME}"
