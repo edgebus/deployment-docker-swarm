@@ -1,0 +1,92 @@
+groups:
+- name: test
+  rules:
+  - alert: PrometheusTargetMissing
+    expr: up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Prometheus target missing (instance {{ $labels.instance }})"
+      description: "A Prometheus target has disappeared. An exporter might be crashed. VALUE = {{ $value }}  LABELS: {{ $labels }}"
+
+  - alert: HostOutOfMemory85
+    expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 15
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Host out of memory (instance {{ $labels.instance }})"
+      description: "Node memory is filling up (< 15% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: HostOutOfMemory95
+    expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 5
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Host out of memory (instance {{ $labels.instance }})"
+      description: "Node memory is filling up (< 5% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: HostOutOfDiskSpace75
+    expr: node_filesystem_avail_bytes{mountpoint="/", job="general_nodes"} / node_filesystem_size_bytes{mountpoint="/", job="general_nodes"} * 100 < 25
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Host out of disk space (instance {{ $labels.instance }})"
+      description: "Disk is almost full (<25% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: HostOutOfDiskSpace90
+    expr: node_filesystem_avail_bytes{mountpoint="/", job="general_nodes"} / node_filesystem_size_bytes{mountpoint="/", job="general_nodes"} * 100 < 10
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Host out of disk space (instance {{ $labels.instance }})"
+      description: "Disk is almost full (<10% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: LowDiskSpace2gb
+    expr: (node_filesystem_avail_bytes{job="infra_server",mountpoint="/"} / (1024 ^ 3) < 2)
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Low disk space on {{ $labels.instance }}"
+      description: "{{ $labels.instance }} has less than 2gb disk space remaining\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: LowDiskSpace1gb
+    expr: (node_filesystem_avail_bytes{job="infra_server",mountpoint="/"} / (1024 ^ 3) < 1)
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Low disk space on {{ $labels.instance }}"
+      description: "{{ $labels.instance }} has less than 1GB disk space remaining\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: HostOutOfInodes85
+    expr: (node_filesystem_files_free{fstype!="tmpfs",mountpoint!~"/backup.*"} * 100) / node_filesystem_files < 15
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Host out of inodes (instance {{ $labels.instance }})"
+      description: "Disk is almost running out of available inodes (< 15% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: HostOutOfInodes95
+    expr: (node_filesystem_files_free{fstype!="tmpfs",mountpoint!~"/backup.*"} * 100) / node_filesystem_files < 5
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Host out of inodes (instance {{ $labels.instance }})"
+      description: "Disk is almost running out of available inodes (< 5% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: HostHighCpuLoad
+    expr: (sum by (instance) (irate(node_cpu{job="node_exporter_metrics",mode="idle"}[5m]))) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Host high CPU load (instance {{ $labels.instance }})"
+      description: "CPU load is > 80%\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"

@@ -1,21 +1,40 @@
+{{#prometheus}}
 version: "3.9"
 
 configs:
-  haproxy.cfg:
-    name: {{name}}.cfg-{{DEPLOYMENT_JOB_ID}}
-{{#DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+  prometheus.yml:
+    name: {{name}}.yml-{{$root.DEPLOYMENT_JOB_ID}}
+{{#$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
     external: true
-{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-{{^DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-    file: ./etc/{{DEPLOYMENT_CLUSTER}}/haproxy.cfg
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{^$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    file: ./etc/{{$root.DEPLOYMENT_CLUSTER}}/prometheus.yml
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
-{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+  prometheus-alert-rules-common.yml:
+    name: {{name}}-alert-rules-common.yml-{{$root.DEPLOYMENT_JOB_ID}}
+{{#$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    external: true
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{^$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    file: ./etc/common/prometheus-alert-rules.yml
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+
+volumes:
+  prometheus:
+    labels:
+      - "io.edgebus.ops=true"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
 
 networks:
   internet-access:
@@ -28,36 +47,47 @@ networks:
     internal: true
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{$root.label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{$root.label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{$root.label.version}}={{DEPLOYMENT_VERSION}}"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
 {{/network.$array}}
 
 services:
   {{name}}:
-    image: haproxy:3.0.10
+    image: prom/prometheus:v3.2.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+      # Set url to Web UI
+      - --web.external-url=https://prometheus.devel.xoob.gg/
+    volumes:
+      - prometheus:/prometheus
+      # Allow Prometheus to use Docker API to get nodes
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    user: nobody:48 # 48 - is an gid of "docker" group
     configs:
-      - source: haproxy.cfg
-        target: /usr/local/etc/haproxy/haproxy.cfg
-        mode: 0644
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - source: prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+      - source: prometheus-alert-rules-common.yml
+        target: /etc/prometheus/prometheus-alert-rules-common.yml
     networks:
       internet-access: # Access to external Redis instance
 {{#network.$array}}
       {{ . }}:
         aliases:
-          - {{$root.alias}}
+          - {{alias}}
 {{/network.$array}}
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
     logging:
       driver: local
       options:
@@ -74,8 +104,7 @@ services:
       {{/nofile}}
 {{/ulimits}}
     deploy:
-      mode: "replicated"
-      replicas: {{replicas}}
+      mode: "global"
       resources: # configures physical resource constraints for container to run on platform.
 {{#resources}}
 {{#limits}}
@@ -94,26 +123,34 @@ services:
           - node.labels.io.edgebus.ops==true
 {{#placement_constraint.$array}}
           - node.labels.{{ . }}==true
+      labels:
+        - "traefik.enable=true"
+        - "traefik.scope=apps"
+        - "traefik.docker.network=cluster_loadbalancer-prometheus-tier"
+
+        - "traefik.http.services.cluster_prometheus.loadbalancer.server.port=9090"
+
+{{#expose.?lb}}
+{{#?http}}
+        # HTTP
+        - "traefik.http.routers.cluster_prometheus-http.rule=Host(`{{domain}}`)"
+        - "traefik.http.routers.cluster_prometheus-http.service=cluster_prometheus"
+        - "traefik.http.routers.cluster_prometheus-http.entrypoints={{entrypoints}}"
+        - "traefik.http.routers.cluster_prometheus-http.middlewares={{middlewares}}"
+{{/?http}}
+{{#?https}}
+        # HTTPS
+        - "traefik.http.routers.cluster_prometheus-https.rule=Host(`{{domain}}`)"
+        - "traefik.http.routers.cluster_prometheus-https.service=cluster_prometheus"
+        - "traefik.http.routers.cluster_prometheus-https.entrypoints={{entrypoints}}"
+        - "traefik.http.routers.cluster_prometheus-https.middlewares={{middlewares}}"
+        - "traefik.http.routers.cluster_prometheus-https.tls=true"
+        - "traefik.http.routers.cluster_prometheus-https.tls.certresolver={{certresolver}}"
+{{#domains.$array}}
+        - "traefik.http.routers.cluster_prometheus-https.tls.domains[{{index}}].main={{main}}"
+        - "traefik.http.routers.cluster_prometheus-https.tls.domains[{{index}}].sans={{sans}}"
+{{/domains.$array}}
+{{/?https}}
+{{/expose.?lb}}
 {{/placement_constraint.$array}}
-      # How the service should be updated
-      update_config:
-        # The number of containers to update at a time.
-        parallelism: 1
-        # Order of operations during updates
-        order: {{deploy.update_config.order}}
-        # What to do if an update fails
-        failure_action: pause
-        # The time to wait between updating a group of containers
-        delay: 10s
-        # Duration after each task update to monitor for failure
-        monitor: 5s
-      # If and how to restart containers when they exit.
-      restart_policy:
-        # containers are restarted regardless of the exit status
-        condition: any
-        # How long to wait between restart attempts
-        delay: 30s
-        # How many times to attempt to restart a container before giving up
-        max_attempts: 2
-        # How long to wait before deciding if a restart has succeeded
-        window: 120s
+{{/prometheus}}
