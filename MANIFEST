@@ -1,91 +1,117 @@
 #
 # Define a set of swarm networks to be attached to the service
 #
-#network.0=...
+#grafana.network.0=grafana-prometheus-tier
 #...
 #network.z=...
 
 #
 # Define a set of placement constraints
 #
-#placement_constraint.0=example.org
+#grafana.placement_constraint.0=example.org
 #...
 #placement_constraint.z=...
 
 #
 # Name of commit label
 #
-#label.commit=example.org.stack.commit
+#grafana.label.commit=example.org.stack.commit
 
 #
 # Name of pipeline label
 #
-#label.pipeline=example.org.stack.pipeline
+#grafana.label.pipeline=example.org.stack.pipeline
 
 #
 # Name of version label
 #
-#label.version=example.org.stack.version
+#grafana.label.version=example.org.stack.version
 
 #
 # Name of service
 #
-name=haproxy
+grafana.name=grafana
 
 #
 # Network alias
 #
-alias=haproxy
+grafana.alias=grafana
 
 #
 # Number of replicas
 #
-replicas=2
+grafana.replicas=2
 
 #
 # Limit processes/threads
 #
-ulimits.nproc=256
+grafana.ulimits.nproc=256
 
 #
 # Limit of file descriptors.
 # Maximum number of opened files.
 #
-ulimits.nofile.hard=16384
+grafana.ulimits.nofile.hard=16384
 
 #
 # Limit of file descriptors.
 # May be changed later by an app, up to the hard limit value, by the process running with these limits.
 #
-ulimits.nofile.soft=8192
+grafana.ulimits.nofile.soft=8192
 
 #
 # How much of the available CPU resources, as number of cores, a container can use.
 # The platform must guarantee the container can allocate at least the configured amount.
 #
-resources.reservations.cpus=0.01
+grafana.resources.reservations.cpus=0.01
 
 #
 # How much of the available amount of memory a container can allocate.
 # The platform must guarantee the container can allocate at least the configured amount.
 #
-resources.reservations.memory=8M
+grafana.resources.reservations.memory=8M
 
 #
 # How much of the available CPU resources, as number of cores, a container can use.
 # The platform must prevent the container to allocate more.
 #
-resources.limits.cpus=1.05
+grafana.resources.limits.cpus=1.05
 
 #
 # How much of the available amount of memory a container can allocate.
 # The platform must prevent the container to allocate more.
 #
-resources.limits.memory=64M
+grafana.resources.limits.memory=64M
 
 #
 # Order of operations during updates
 # See more https://docs.docker.com/reference/compose-file/deploy/#update_config
 # Enum: start-first, stop-first
 #
-deploy.update_config.order=start-first
+grafana.deploy.update_config.order=start-first
+
+#
+# Expose grafana via load balancer (for example Traefik) 
+#
+grafana.expose.lb.domain=grafana.example.org
+grafana.expose.lb.http.entrypoints=web
+grafana.expose.lb.http.middlewares=force-ssl@file
+grafana.expose.lb.https.entrypoints=websecure
+grafana.expose.lb.https.middlewares=force-ssl@file
+grafana.expose.lb.https.certresolver=defaultCertificatesResolver
+# To-do remove the following line after the framework supports using $index
+grafana.expose.lb.https.domains.0.index=0
+grafana.expose.lb.https.domains.0.main=grafana.example.org
+grafana.expose.lb.https.domains.0.sans=*.grafana.example.org
+# To-do remove the following line after the framework supports using $index
+grafana.expose.lb.https.domains.1.index=1
+grafana.expose.lb.https.domains.1.main=example.org
+grafana.expose.lb.https.domains.1.sans=*.example.org
+
+#
+# Expose grafana via the host machine
+#
+grafana.expose.publish.host=127.0.0.1
+grafana.expose.publish.port=9999
+
+#grafana.prometheus=1
