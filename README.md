@@ -54,7 +54,7 @@ Commits trigger deploy to **devel** cluster ONLY.
    export DEPLOYMENT_PIPELINE_URL="http://ci.example.org/job/42"
    export DEPLOYMENT_VERSION="$(git rev-parse --short HEAD)"
    ```
-1. Generate Docker Stack fil
+2. Generate Docker Stack file
    ```shell
    cat stack.yml.mustache \
    | docker run --interactive --rm \
@@ -73,41 +73,31 @@ Commits trigger deploy to **devel** cluster ONLY.
          --config-env \
    | tee stack.local.yml
    ```
-1. Bypass docker socket to your workstation as `~/tmp/docker-swarm.sock` (where `devel-01.example.org` is Docker Swarm manager node of a cluster)
-
+3. Deploy stack
    ```shell
-   rm -f ~/tmp/docker-swarm.sock; ssh -N -L ~/tmp/docker-swarm.sock:/var/run/docker.sock devel-01.example.org
-
-   export DOCKER_HOST=unix://$HOME/tmp/docker-swarm.sock
-   ```
-
-1. Deploy stack
-   ```shell
-   export DOCKER_HOST=unix://$HOME/tmp/docker-swarm.sock
    docker stack deploy --detach=false --compose-file stack.local.yml  "${DEPLOYMENT_STACK_NAME}"
    ```
-1. Monitoring
+4. Monitoring
    ```shell
-   export DOCKER_HOST=unix://$HOME/tmp/docker-swarm.sock
-   docker stack ps               "${DEPLOYMENT_STACK_NAME}"
-   docker service logs --follow  "${DEPLOYMENT_STACK_NAME}traefik"
+   docker stack ps               "${DEPLOYMENT_STACK_NAME}"                #Lists the tasks that are running as part of the specified stack.
+   docker service logs --follow  "${DEPLOYMENT_STACK_NAME}_portainer"      #Used to view the logs of a Docker service in real-time.
    ```
 
 ## Setup
 
-1. Mirror this branch to your repository
-   ```shell
-   TBD
-   ```
-1. Configure Traefik
-   ```shell
-   cp -a etc/traefik.cfg-example etc/traefik.cfg
-   vi etc/traefik.cfg # modify for yourself
-   ```
 1. Commit changes and see for CD pipeline for deployment into `devel` cluster
-1. Test Release Candidates to deploy pipelines against ALL (except `prod`) clusters
-   1. Make tag in format `traefik[a-z]*-rcXX`
-   1. Start pipeline against the tag in your CI/CD platform
-1. Test Release to deploy pipelines against ALL clusters
-   1. Make tag in format `traefik[a-z]*-YYYYMMDDxx`
-   1. Start pipeline against the tag in your CI/CD platform
+2. Test Release Candidates to deploy pipelines against ALL (except `prod`) clusters
+
+   2.1 Make tag in format `portainer[a-z]*-rcXX`
+
+   2.2 Start pipeline against the tag in your CI/CD platform
+3. Test Release to deploy pipelines against ALL clusters
+
+   3.1 Make tag in format `portainer[a-z]*-YYYYMMDDxx`
+
+   3.2 Start pipeline against the tag in your CI/CD platform
+
+4. Add label to cluster  
+   ```shell
+   docker node update --label-add "example.org=true" [name of the target Swarm node you are adding the label]
+   ```

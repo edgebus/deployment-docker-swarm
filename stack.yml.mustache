@@ -1,61 +1,62 @@
+{{#traefik}}
 version: "3.9"
 
 configs:
   docker-expand-envs-entrypoint.sh:
-    name: {{name}}.sh-{{DEPLOYMENT_JOB_ID}}
-{{#DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    name: {{name}}.sh-{{$root.DEPLOYMENT_JOB_ID}}
+{{#$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
     external: true
-{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-{{^DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{^$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
     file: ./misc/docker-expand-envs-entrypoint.sh
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
-{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
   traefik.toml:
-    name: {{name}}.toml-{{DEPLOYMENT_JOB_ID}}
-{{#DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    name: {{name}}.toml-{{$root.DEPLOYMENT_JOB_ID}}
+{{#$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
     external: true
-{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-{{^DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-    file: ./etc/{{DEPLOYMENT_CLUSTER}}/traefik.toml
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{^$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    file: ./etc/{{$root.DEPLOYMENT_CLUSTER}}/traefik.toml
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
-{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
   traefik-dynamic.toml:
-    name: {{name}}-dynamic.toml-{{DEPLOYMENT_JOB_ID}}
-{{#DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    name: {{name}}-dynamic.toml-{{$root.DEPLOYMENT_JOB_ID}}
+{{#$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
     external: true
-{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-{{^DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-    file: ./etc/{{DEPLOYMENT_CLUSTER}}/traefik-dynamic.toml
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{^$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    file: ./etc/{{$root.DEPLOYMENT_CLUSTER}}/traefik-dynamic.toml
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
-{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
 
 volumes:
   traefik:
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
 
 networks:
   internet-access:
@@ -68,11 +69,11 @@ networks:
     internal: true
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{$root.label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{$root.label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{$root.label.version}}={{DEPLOYMENT_VERSION}}"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
 {{/network.$array}}
 
 services:
@@ -83,12 +84,12 @@ services:
       - /entrypoint.sh
       - traefik
     ports:
-{{#traefik.entryPoints.$array}}
+{{#entryPoints.$array}}
       - published: {{port}}
         target: {{port}}
         protocol: {{protocol}}
         mode: host
-{{/traefik.entryPoints.$array}}
+{{/entryPoints.$array}}
     volumes:
       - traefik:/traefik-data
       # So that Traefik can listen to the Docker events
@@ -108,15 +109,15 @@ services:
 {{#network.$array}}
       {{ . }}:
         aliases:
-          - {{$root.alias}}
+          - {{alias}}
 {{/network.$array}}
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
     logging:
       driver: local
       options:
@@ -176,3 +177,4 @@ services:
         max_attempts: 2
         # How long to wait before deciding if a restart has succeeded
         window: 120s
+{{/traefik}}

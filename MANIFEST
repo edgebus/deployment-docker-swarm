@@ -1,103 +1,103 @@
 #
 # Define a set of swarm networks to be attached to the service
 #
-#network.0=traefik-tier
+#traefik.network.0=traefik-tier
 #...
 #network.z=...
 
 #
 # Define a set of placement constraints
 #
-#placement_constraint.0=example.org
+#traefik.placement_constraint.0=example.org
 #...
 #placement_constraint.z=...
 
 #
 # Name of commit label
 #
-#label.commit=example.org.stack.commit
+#traefik.label.commit=example.org.stack.commit
 
 #
 # Name of pipeline label
 #
-#label.pipeline=example.org.stack.pipeline
+#traefik.label.pipeline=example.org.stack.pipeline
 
 #
 # Name of version label
 #
-#label.version=example.org.stack.version
+#traefik.label.version=example.org.stack.version
 
 #
 # Name of service
 #
-name=traefik
+#traefik.name=traefik
 
 #
 # Network alias
 #
-alias=traefik
+#traefik.alias=traefik
 
 #
 # Number of replicas
 #
-replicas=2
+#traefik.replicas=2
 
 #
 # Limit processes/threads
 #
-ulimits.nproc=256
+#traefik.ulimits.nproc=256
 
 #
 # Limit of file descriptors.
 # Maximum number of opened files.
 #
-ulimits.nofile.hard=16384
+#traefik.ulimits.nofile.hard=16384
 
 #
 # Limit of file descriptors.
 # May be changed later by an app, up to the hard limit value, by the process running with these limits.
 #
-ulimits.nofile.soft=8192
+#traefik.ulimits.nofile.soft=8192
 
 #
 # How much of the available CPU resources, as number of cores, a container can use.
 # The platform must guarantee the container can allocate at least the configured amount.
 #
-resources.reservations.cpus=0.01
+#traefik.resources.reservations.cpus=0.01
 
 #
 # How much of the available amount of memory a container can allocate.
 # The platform must guarantee the container can allocate at least the configured amount.
 #
-resources.reservations.memory=8M
+#traefik.resources.reservations.memory=8M
 
 #
 # How much of the available CPU resources, as number of cores, a container can use.
 # The platform must prevent the container to allocate more.
 #
-resources.limits.cpus=1.05
+#traefik.resources.limits.cpus=1.05
 
 #
 # How much of the available amount of memory a container can allocate.
 # The platform must prevent the container to allocate more.
 #
-resources.limits.memory=64M
+#traefik.resources.limits.memory=64M
 
 #
 # Order of operations during updates
 # See more https://docs.docker.com/reference/compose-file/deploy/#update_config
 # Enum: start-first, stop-first
 #
-deploy.update_config.order=start-first
+#traefik.deploy.update_config.order=start-first
 
 #
 # Port on which to listen for incoming connections and packets
 #
-traefik.entryPoints.web.port=80
+#traefik.entryPoints.web.port=80
 #
 # Protocol to use (tcp or udp)
 #
-traefik.entryPoints.web.protocol=tcp
+#traefik.entryPoints.web.protocol=tcp
 
 #traefik.entryPoints.websecure.port=433
 #traefik.entryPoints.websecure.protocol=tcp
