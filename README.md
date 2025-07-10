@@ -66,7 +66,7 @@ Commits trigger deploy to **devel** cluster ONLY.
       --env DEPLOYMENT_PIPELINE_URL \
       --env DEPLOYMENT_VERSION \
       --env DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS="" \
-      theanurin/configuration-templates:20250503 \
+      theanurin/configuration-templates:20250710 \
          --engine mustache \
          --config-file="/tmp/MANIFEST" \
          --config-file="/tmp/MANIFEST-${DEPLOYMENT_CLUSTER}" \
@@ -80,7 +80,7 @@ Commits trigger deploy to **devel** cluster ONLY.
 4. Monitoring
    ```shell
    docker stack ps               "${DEPLOYMENT_STACK_NAME}"                #Lists the tasks that are running as part of the specified stack.
-   docker service logs --follow  "${DEPLOYMENT_STACK_NAME}_portainer"      #Used to view the logs of a Docker service in real-time.
+   docker service logs --follow  "${DEPLOYMENT_STACK_NAME}_traefik"      #Used to view the logs of a Docker service in real-time.
    ```
 
 ## Setup
@@ -88,12 +88,12 @@ Commits trigger deploy to **devel** cluster ONLY.
 1. Commit changes and see for CD pipeline for deployment into `devel` cluster
 2. Test Release Candidates to deploy pipelines against ALL (except `prod`) clusters
 
-   2.1 Make tag in format `portainer[a-z]*-rcXX`
+   2.1 Make tag in format `traefik[a-z]*-rcXX`
 
    2.2 Start pipeline against the tag in your CI/CD platform
 3. Test Release to deploy pipelines against ALL clusters
 
-   3.1 Make tag in format `portainer[a-z]*-YYYYMMDDxx`
+   3.1 Make tag in format `traefik[a-z]*-YYYYMMDDxx`
 
    3.2 Start pipeline against the tag in your CI/CD platform
 
