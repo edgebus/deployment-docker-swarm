@@ -1,0 +1,11 @@
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "grafana-deployment": true,
+        "portainer-deployment": true,
+        "prometheus-deployment": true,
+        "traefik-deployment": true,
+    }
+}

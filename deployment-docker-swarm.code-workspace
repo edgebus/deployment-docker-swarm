@@ -1,19 +1,23 @@
 {
 	"folders": [
 		{
-			"path": "traefik-deployment"
-		},
-		{
-			"path": "portainer-deployment"
-		},
-		{
-			"path": "prometheus-deployment"
-		},
-		{
+			"name": "Grafana Deployment",
 			"path": "grafana-deployment"
 		},
 		{
-			"name": "workspace",
+			"name": "Portainer Deployment",
+			"path": "portainer-deployment"
+		},
+		{
+			"name": "Prometheus Deployment",
+			"path": "prometheus-deployment"
+		},
+		{
+			"name": "Traefik Deployment",
+			"path": "traefik-deployment"
+		},
+		{
+			"name": "Workspace",
 			"path": "."
 		}
 	],
