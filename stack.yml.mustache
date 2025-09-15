@@ -1,21 +1,83 @@
+{{#grafana}}
 version: "3.9"
 
 configs:
-  haproxy.cfg:
-    name: {{name}}.cfg-{{DEPLOYMENT_JOB_ID}}
-{{#DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{#?prometheus}}
+  datasources-prometheus.yaml:
+    name: {{name}}-datasources-prometheus.yaml-{{$root.DEPLOYMENT_JOB_ID}}
+{{#$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
     external: true
-{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-{{^DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-    file: ./etc/{{DEPLOYMENT_CLUSTER}}/haproxy.cfg
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{^$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    file: ./etc/common/datasources-prometheus.yaml
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
-{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{/?prometheus}}
+{{#?loki}}
+  datasources-loki.yaml:
+    name: {{name}}-datasources-loki.yaml-{{$root.DEPLOYMENT_JOB_ID}}
+{{#$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    external: true
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{^$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    file: ./etc/common/datasources-loki.yaml
+    labels:
+      - "io.edgebus.ops=true"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{/?loki}}
+  grafana.ini:
+    name: {{name}}-grafana.ini-{{$root.DEPLOYMENT_JOB_ID}}
+{{#$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    external: true
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{^$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    file: ./etc/{{$root.DEPLOYMENT_CLUSTER}}/grafana.ini
+    labels:
+      - "io.edgebus.ops=true"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+
+secrets:
+  GRAFANA_ADMIN_PASSWORD:
+    name: {{name}}-GRAFANA_ADMIN_PASSWORD-{{$root.DEPLOYMENT_JOB_ID}}
+{{#$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    external: true
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{^$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    file: ./.secret/{{name}}/GRAFANA_ADMIN_PASSWORD
+    labels:
+      - "io.edgebus.ops=true"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+
+volumes:
+  grafana:
+    labels:
+      - "io.edgebus.ops=true"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
 
 networks:
   internet-access:
@@ -28,36 +90,50 @@ networks:
     internal: true
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{$root.label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{$root.label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{$root.label.version}}={{DEPLOYMENT_VERSION}}"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
 {{/network.$array}}
 
 services:
   {{name}}:
-    image: haproxy:3.0.10
+    image: grafana/grafana:11.5.2
+    volumes:
+      - grafana:/var/lib/grafana
     configs:
-      - source: haproxy.cfg
-        target: /usr/local/etc/haproxy/haproxy.cfg
+{{#?prometheus}}
+      - source: datasources-prometheus.yaml
+        target: /etc/grafana/provisioning/datasources/prometheus.yaml
+        mode: 0444
+{{/?prometheus}}
+{{#?loki}}
+      - source: datasources-loki.yaml
+        target: /etc/grafana/provisioning/datasources/loki.yaml
+        mode: 0444
+{{/?loki}}
+      - source: grafana.ini
+        target: /etc/grafana/grafana.ini
+        mode: 0444
+    secrets:
+      - source: GRAFANA_ADMIN_PASSWORD
+        target: /run/secrets/GF_SECURITY_ADMIN_PASSWORD
         mode: 0644
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     networks:
       internet-access: # Access to external Redis instance
 {{#network.$array}}
       {{ . }}:
         aliases:
-          - {{$root.alias}}
+          - {{alias}}
 {{/network.$array}}
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
     logging:
       driver: local
       options:
@@ -74,8 +150,7 @@ services:
       {{/nofile}}
 {{/ulimits}}
     deploy:
-      mode: "replicated"
-      replicas: {{replicas}}
+      mode: "global"
       resources: # configures physical resource constraints for container to run on platform.
 {{#resources}}
 {{#limits}}
@@ -117,3 +192,32 @@ services:
         max_attempts: 2
         # How long to wait before deciding if a restart has succeeded
         window: 120s
+      labels:
+      - "traefik.enable=true"
+      - "traefik.scope=apps"
+      - "traefik.docker.network=cluster_loadbalancer-grafana-tier"
+
+      - "traefik.http.services.cluster_grafana.loadbalancer.server.port=8080"
+{{#expose.?lb}}
+{{#?http}}
+      # HTTP
+      - "traefik.http.routers.cluster_grafana-http.rule=Host(`{{domain}}`)"
+      - "traefik.http.routers.cluster_grafana-http.service=cluster_grafana"
+      - "traefik.http.routers.cluster_grafana-http.entrypoints={{entrypoints}}"
+      - "traefik.http.routers.cluster_grafana-http.middlewares={{middlewares}}"
+{{/?http}}
+{{#?https}}
+      # HTTPS
+      - "traefik.http.routers.cluster_grafana-https.rule=Host(`{{domain}}`)"
+      - "traefik.http.routers.cluster_grafana-https.service=cluster_grafana"
+      - "traefik.http.routers.cluster_grafana-https.entrypoints={{entrypoints}}"
+      - "traefik.http.routers.cluster_grafana-https.middlewares={{middlewares}}"
+      - "traefik.http.routers.cluster_grafana-https.tls=true"
+      - "traefik.http.routers.cluster_grafana-https.tls.certresolver={{certresolver}}"
+{{#domains.$array}}
+      - "traefik.http.routers.cluster_grafana-https.tls.domains[{{index}}].main={{main}}"
+      - "traefik.http.routers.cluster_grafana-https.tls.domains[{{index}}].sans={{sans}}"
+{{/domains.$array}}
+{{/?https}}
+{{/expose.?lb}}
+{{/grafana}}
