@@ -85,7 +85,20 @@ services:
       {{/nofile}}
 {{/ulimits}}
     deploy:
-      mode: "global"
+      mode: global # use 'global' due to Stateful service
+      resources: # configures physical resource constraints for container to run on platform.
+{{#resources}}
+{{#limits}}
+        limits:          # The platform must prevent the container to allocate more.
+          cpus: "{{cpus}}" # how much of the available CPU resources, as number of cores, a container can use.
+          memory: "{{memory}}" # amount of memory a container can allocate
+{{/limits}}
+{{#reservations}}
+        reservations:    # The platform must guarantee the container can allocate at least the configured amount.
+          cpus: "{{cpus}}" # how much of the available CPU resources, as number of cores, a container can use.
+          memory: "{{memory}}" # amount of memory a container can allocate
+{{/reservations}}
+{{/resources}}
       placement:
         constraints:
           - node.labels.io.edgebus.ops==true
