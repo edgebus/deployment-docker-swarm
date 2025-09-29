@@ -3,14 +3,14 @@
 #
 #traefik.network.0=traefik-tier
 #...
-#network.z=...
+#traefik.network.z=...
 
 #
 # Define a set of placement constraints
 #
 #traefik.placement_constraint.0=example.org
 #...
-#placement_constraint.z=...
+#traefik.placement_constraint.z=...
 
 #
 # Name of commit label
@@ -36,11 +36,6 @@
 # Network alias
 #
 #traefik.alias=traefik
-
-#
-# Number of replicas
-#
-#traefik.replicas=2
 
 #
 # Limit processes/threads
@@ -99,5 +94,14 @@
 #
 #traefik.entryPoints.web.protocol=tcp
 
-#traefik.entryPoints.websecure.port=433
+#traefik.entryPoints.websecure.port=443
 #traefik.entryPoints.websecure.protocol=tcp
+
+#traefik.certificateAuthority.name.certificate=polina
+#traefik.certificateAuthority.name.common=traefik.polina.org
+#traefik.certificateAuthority.country=UA
+#traefik.certificateAuthority.state=Kyiv
+#traefik.certificateAuthority.organization=DemoCA1
+#traefik.certificateAuthority.organizationUnit=IT
+#traefik.certificateAuthority.emailAddress=DemoCA1@example.org
+#traefik.certificateAuthority.rootDomain=polina.org

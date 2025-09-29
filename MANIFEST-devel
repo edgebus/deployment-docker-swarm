@@ -10,5 +10,3 @@
 #placement_constraint.1=example.org.devel
 #placement_constraint.2=example.org.devel.cluster
 #placement_constraint.3=example.org.devel.cluster.traefik
-
-#replicas=1

@@ -1,0 +1,109 @@
+[accessLog]
+  format = "json"
+  [accessLog.fields]
+    defaultMode = "keep"
+    [accessLog.fields.names]
+      "ClientUsername" = "drop"
+    [accessLog.fields.headers]
+      defaultMode = "drop"
+      [accessLog.fields.headers.names]
+        "Host" = "keep"
+        "X-Forwarded-For" = "keep"
+        "X-Real-IP" = "keep"
+        "X-Forwarded-Proto" = "keep"
+        "User-Agent" = "keep"
+        "Referer" = "keep"
+        "Content-Type" = "keep"
+        "Accept" = "keep"
+        "Accept-Language" = "keep"
+        "Accept-Encoding" = "keep"
+
+[log]
+  # https://doc.traefik.io/traefik/v2.11/observability/logs/#level
+  # level = "DEBUG"
+  #level = "INFO"
+  level = "WARN"
+  # https://doc.traefik.io/traefik/v2.11/observability/logs/#format
+  format = "json"
+
+[providers.file]
+  filename = "/etc/traefik/traefik-dynamic.toml"
+  watch = false
+
+[providers.docker]
+  endpoint = "unix:///var/run/docker.sock"
+  #
+  # Expose containers by default through Traefik.
+  # If set to false, containers that do not have a traefik.enable=true
+  # label are ignored from the resulting routing configuration.
+  # https://doc.traefik.io/traefik/v2.11/providers/docker/#exposedbydefault
+  exposedByDefault = false
+  #
+  # The constraints option can be set to an expression that Traefik matches against the container
+  # labels to determine whether to create any route for that container. If none of the container labels
+  # match the expression, no route for that container is created.
+  # See: Scope of Service Discovery https://doc.traefik.io/traefik/v2.11/providers/overview/#restrict-the-scope-of-service-discovery
+  constraints = "Label(`traefik.scope`, `apps`)"
+  #
+  # The defaultRule option defines what routing rule to apply to a container if no rule is defined by a label.
+  #
+  # It must be a valid Go template, and can use sprig template functions. The container name can be accessed 
+  # with the ContainerName identifier. The service name can be accessed with the Name identifier. The template
+  # has access to all the labels defined on this container with the Labels identifier.
+  #
+  # See Traefik & Docker: https://doc.traefik.io/traefik/v2.11/providers/docker/#defaultrule
+  #
+  # This rule translate task name to domain like a:
+  #
+  #  mystack_myservice => myservice-mystack.devel.xoob.gg:
+  #   {{ .Name | replace (list (index .Labels "com.docker.stack.namespace") "-" | join "") "" }}-{{ index .Labels "com.docker.stack.namespace" }}.devel.xoob.gg
+  #
+  #  mystack_myservice => mystack.devel.xoob.gg:
+  #   {{ index .Labels "com.docker.stack.namespace" }}.devel.xoob.gg
+  #
+  defaultRule = "Host(`{{ index .Labels \"com.docker.stack.namespace\" }}.devel.xoob.gg`)"
+  #
+  # Activates the Swarm Mode (instead of standalone Docker).
+  # https://doc.traefik.io/traefik/v2.11/providers/docker/#swarmmode
+  #
+  swarmMode = true
+  #
+  # Defines the polling interval (in seconds) for Swarm Mode.
+  # https://doc.traefik.io/traefik/v2.11/providers/docker/#swarmmoderefreshseconds
+  #
+  swarmModeRefreshSeconds = "5s"
+
+[api]
+    insecure = false
+    dashboard = true
+    #  debug = true
+
+[entryPoints]
+    [entryPoints.web]
+        address = "0.0.0.0:80"
+        # https://doc.traefik.io/traefik/v2.11/routing/entrypoints/#forwarded-headers
+        [entryPoints.web.forwardedHeaders]
+            insecure = true
+        [entryPoints.web.transport]
+            [entryPoints.web.transport.respondingTimeouts]
+                readTimeout = "900s"
+                writeTimeout = "900s"
+                idleTimeout = "300s"
+    [entryPoints.websecure]
+        address = "0.0.0.0:443"
+        # https://doc.traefik.io/traefik/v2.11/routing/entrypoints/#forwarded-headers
+        [entryPoints.websecure.forwardedHeaders]
+            insecure = true
+
+       
+    [entryPoints.metrics]
+        address = "0.0.0.0:9323"
+        [entryPoints.metrics.transport]
+            [entryPoints.metrics.transport.respondingTimeouts]
+                readTimeout = "60s"
+                writeTimeout = "60s"
+                idleTimeout = "180s"
+
+[metrics]
+    [metrics.prometheus]
+        entryPoint = "metrics"

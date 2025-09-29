@@ -10,5 +10,3 @@
 #placement_constraint.1=example.org.prod
 #placement_constraint.2=example.org.prod.cluster
 #placement_constraint.3=example.org.prod.cluster.traefik
-
-#replicas=4

@@ -47,51 +47,12 @@
         "X-Real-IP" = "" # Remove buggy X-Real-IP header. See https://github.com/traefik/traefik/issues/8497
 
   [http.routers.dashboard]
-    rule = "Host(`traefik.devel.xoob.gg`)"
+    rule = "Host(`traefik.polina.example.org`)"
     service = "api@internal"
     entrypoints = ["websecure"]
     middlewares = ["internal-ips"]
     [http.routers.dashboard.tls]
       certResolver = "defaultCertificatesResolver"
       [[http.routers.dashboard.tls.domains]]
-        main = "devel.xoob.gg"
-        sans = ["*.devel.xoob.gg"]
-
-  # # Configure Legacy Instance (that hosted as a docker container outside of Docker Swarm)
-  # [http.services.legacy-game-api.loadBalancer]
-  #   [[http.services.legacy-game-api.loadBalancer.servers]]
-  #     url = "http://instance-legacy-api:3000/"
-  # [http.routers.instance-legacy_http]
-  #   rule = "Host(`devgame-api-v2.xoob.gg`)"
-  #   service = "legacy-game-api@file"
-  #   entrypoints = ["web"]
-  #   priority = 1
-  # [http.routers.instance-legacy_https]
-  #   rule = "Host(`devgame-api-v2.xoob.gg`)"
-  #   service = "legacy-game-api@file"
-  #   entrypoints = ["websecure"]
-  #   priority = 1
-  #   [http.routers.instance-legacy_https.tls]
-  #     certResolver = "defaultCertificatesResolver"
-
-  # Reverse proxy to Nginx
-  [http.services.standalone-nginx.loadBalancer]
-    passHostHeader = true
-    serversTransport = "standalone-nginx-transport"
-    # https://doc.traefik.io/traefik/v2.11/routing/services/#servers
-    [[http.services.standalone-nginx.loadBalancer.servers]]
-      url = "https://168.119.116.51:8443/"
-  [http.routers.standalone-nginx_http]
-    rule = "Host(`devgame.xoob.gg`) || Host(`devgame-api.xoob.gg`)"
-    service = "standalone-nginx@file"
-    entrypoints = ["web"]
-    priority = 1
-  [http.routers.standalone-nginx_https]
-    rule = "Host(`devgame.xoob.gg`) || Host(`devgame-api.xoob.gg`)"
-    service = "standalone-nginx@file"
-    entrypoints = ["websecure"]
-    priority = 1
-    [http.routers.standalone-nginx_https.tls]
-      certResolver = "defaultCertificatesResolver"
-  [http.serversTransports.standalone-nginx-transport]
-    insecureSkipVerify = true
+        main = "traefik.polina.example.org"
+        #sans = ["*.polina.example.org"]
