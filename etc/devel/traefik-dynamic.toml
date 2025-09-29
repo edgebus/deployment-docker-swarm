@@ -51,6 +51,9 @@
         main = "traefik.polina.org"
         #sans = ["*.polina.org"]
 
-[[tls.certificates]]
-  certFile = "/etc/traefik/traefik-ssl.crt"
-  keyFile = "/etc/traefik/traefik-ssl.key"
+
+[tls.stores]
+  [tls.stores.default]
+    [tls.stores.default.defaultCertificate]
+      certFile = "/traefik-data/server.crt"
+      keyFile = "/traefik-data/server.key"

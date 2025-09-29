@@ -1,9 +1,6 @@
 #!/bin/sh
 #
 
-APP="${1}"
-shift
-
 if [ -d /run/vars ]; then
     for FILE_NAME in $(cd /run/vars && find * -type f -maxdepth 0 -print); do
         NOW=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
@@ -32,4 +29,4 @@ else
     echo "{\"name\":\"Docker Entry Point\",\"level\":\"warn\",\"message\":\"WARNING: Directory /run/secrets does not provided. Skipping expand environment variables.\",\"time\":\"${NOW}\"}" >&2
 fi
 
-exec "${APP}" "$@"
+exec "$@"

@@ -2,8 +2,11 @@
     "cSpell.words": [
         "devel",
         "edgebus",
-        "traefiksomething",
+        "nofile",
         "pipefail",
-        "theanurin"
+        "theanurin",
+        "traefik",
+        "traefiksomething",
+        "ulimits"
     ]
 }
