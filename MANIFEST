@@ -97,7 +97,6 @@
 #traefik.entryPoints.websecure.port=443
 #traefik.entryPoints.websecure.protocol=tcp
 
-#traefik.certificateAuthority.name.certificate=polina
 #traefik.certificateAuthority.name.common=traefik.polina.org
 #traefik.certificateAuthority.country=UA
 #traefik.certificateAuthority.state=Kyiv

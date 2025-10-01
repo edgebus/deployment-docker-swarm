@@ -47,36 +47,6 @@ configs:
       - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
       - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
 {{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-  DemoServer.crt:
-    name: DemoServer.crt-{{$root.DEPLOYMENT_JOB_ID}}
-{{#$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-    external: true
-{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-{{^$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-    file: ./etc/{{$root.DEPLOYMENT_CLUSTER}}/DemoServer.crt
-    labels:
-      - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
-      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
-      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
-      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
-{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-  Demo.key:
-    name: Demo.key-{{$root.DEPLOYMENT_JOB_ID}}
-{{#$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-    external: true
-{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-{{^$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-    file: ./etc/{{$root.DEPLOYMENT_CLUSTER}}/Demo.key
-    labels:
-      - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
-      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
-      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
-      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
-{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
 
 volumes:
   traefik:
@@ -127,15 +97,14 @@ services:
 {{#certificateAuthority}}
     environment:
 {{#name}}
-      CA_NAME:  {{certificate}}
-      COMMON_NAME: {{common}}
+      DEFAULT_CERT_COMMON_NAME: {{common}}
 {{/name}}
-      COUNTRY: {{country}}
-      STATE: {{state}}
-      ORGANIZATION: {{organization}}
-      ORGANIZATION_UNIT: {{organizationUnit}}
-      EMAIL_ADDRESS: {{emailAddress}}
-      ROOT_DOMAIN: {{rootDomain}}
+      DEFAULT_CERT_COUNTRY: {{country}}
+      DEFAULT_CERT_STATE: {{state}}
+      DEFAULT_CERT_ORGANIZATION: {{organization}}
+      DEFAULT_CERT_ORGANIZATION_UNIT: {{organizationUnit}}
+      DEFAULT_CERT_EMAIL_ADDRESS: {{emailAddress}}
+      DEFAULT_CERT_ROOT_DOMAIN: {{rootDomain}}
 {{/certificateAuthority}}
     configs:
       - source: docker-expand-envs-entrypoint.sh
@@ -146,12 +115,6 @@ services:
         mode: 0644
       - source: traefik-dynamic.toml
         target: /etc/traefik/traefik-dynamic.toml
-        mode: 0644
-      - source: DemoServer.crt
-        target: /etc/traefik/traefik-ssl.crt
-        mode: 0644
-      - source: Demo.key
-        target: /etc/traefik/traefik-ssl.key
         mode: 0644
     networks:
       internet-access: # Access to external Redis instance
