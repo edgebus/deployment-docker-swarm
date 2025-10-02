@@ -1,6 +1,11 @@
-# HAProxy Deployment
+# About Portainer
 
-- Upstream of this branch is https://github.com/edgebus/deployment-docker-swarm/tree/haproxy%23main
+Portainer is a lightweight management UI that allows you to easily manage your Docker environments.
+It provides a simple and intuitive web interface to create, manage, and monitor Docker containers, images, networks, and volumes.
+
+# Portainer Deployment
+
+- Upstream of this branch is https://github.com/edgebus/deployment-docker-swarm/tree/portainer%23main
 - How to use [EdgeBus Ops](https://docs.edgebus.io/ops/swarm) for Docker Swarm
 
 ![Diagram](docs/diagram.drawio.svg)
@@ -14,23 +19,23 @@ To launch automated deploy (via your CI/CD platform) use:
 
 ### Tags Format
 
-|                   | Format                                | What to deploy                                               |
-| ----------------- | ------------------------------------- | ------------------------------------------------------------ |
-| Release Candidate | `haproxy[a-z]*-YYYYMMDDhhmmss-rcXxxx` | create deploy pipelines against ALL (except `prod`) clusters |
-| Release           | `haproxy[a-z]*-YYYYMMDDhhmmss`        | create deploy pipelines against ALL clusters                 |
+|                   | Format                                   | What to deploy                                               |
+| ----------------- | ---------------------------------------- | ------------------------------------------------------------ |
+| Release Candidate | `portainer[a-z]*-YYYYMMDDhhmmss-rcXxxx`  | create deploy pipelines against ALL (except `prod`) clusters |
+| Release           | `portainer[a-z]*-YYYYMMDDhhmmss`         | create deploy pipelines against ALL clusters                 |
 
 Examples:
 
-- `haproxysomething-20250503-rc000`
-- `haproxysomething-20250503-rc00`
-- `haproxysomething-20250503-rc0`
-- `haproxysomething-2025050323-rc0`
-- `haproxysomething-202505032359-rc0`
-- `haproxysomething-20250503235959-rc0`
-- `haproxysomething-20250503`
-- `haproxysomething-2025050323`
-- `haproxysomething-202505032359`
-- `haproxysomething-20250503235959`
+- `portainersomething-20250503-rc000`
+- `portainersomething-20250503-rc00`
+- `portainersomething-20250503-rc0`
+- `portainersomething-2025050323-rc0`
+- `portainersomething-202505032359-rc0`
+- `portainersomething-20250503235959-rc0`
+- `portainersomething-20250503`
+- `portainersomething-2025050323`
+- `portainersomething-202505032359`
+- `portainersomething-20250503235959`
 
 ### Commits
 
@@ -38,13 +43,6 @@ Commits trigger deploy to **devel** cluster ONLY.
 
 ## Manual Deploy
 
-1. Prepare secrets
-   ```shell
-   mkdir .secrets
-   ```
-1. ```shell
-   #
-   ```
 1. Export deployment variables
    ```shell
    export DEPLOYMENT_CLUSTER="devel"
@@ -54,7 +52,7 @@ Commits trigger deploy to **devel** cluster ONLY.
    export DEPLOYMENT_PIPELINE_URL="http://ci.example.org/job/42"
    export DEPLOYMENT_VERSION="$(git rev-parse --short HEAD)"
    ```
-1. Generate Docker Stack fil
+2. Generate Docker Stack file
    ```shell
    cat stack.yml.mustache \
    | docker run --interactive --rm \
@@ -65,48 +63,38 @@ Commits trigger deploy to **devel** cluster ONLY.
       --env DEPLOYMENT_JOB_ID \
       --env DEPLOYMENT_PIPELINE_URL \
       --env DEPLOYMENT_VERSION \
-      theanurin/configuration-templates:20250503 \
+      theanurin/configuration-templates:20250710 \
          --engine mustache \
          --config-file="/tmp/MANIFEST" \
          --config-file="/tmp/MANIFEST-${DEPLOYMENT_CLUSTER}" \
          --config-env \
    | tee stack.local.yml
    ```
-1. Bypass docker socket to your workstation as `~/tmp/docker-swarm.sock` (where `devel-01.example.org` is Docker Swarm manager node of a cluster)
-
+3. Deploy stack
    ```shell
-   rm -f ~/tmp/docker-swarm.sock; ssh -N -L ~/tmp/docker-swarm.sock:/var/run/docker.sock devel-01.example.org
-
-   export DOCKER_HOST=unix://$HOME/tmp/docker-swarm.sock
+   docker stack deploy --detach=false --compose-file stack.local.yml  "${DEPLOYMENT_STACK_NAME}"
    ```
-
-1. Deploy stack
+4. Monitoring
    ```shell
-   export DOCKER_HOST=unix://$HOME/tmp/docker-swarm.sock
-   docker stack deploy --compose-file stack.local.yml  "${DEPLOYMENT_STACK_NAME}"
-   ```
-1. Monitoring
-   ```shell
-   export DOCKER_HOST=unix://$HOME/tmp/docker-swarm.sock
-   docker stack ps               "${DEPLOYMENT_STACK_NAME}"
-   docker service logs --follow  "${DEPLOYMENT_STACK_NAME}_haproxy"
+   docker stack ps               "${DEPLOYMENT_STACK_NAME}"                #Lists the tasks that are running as part of the specified stack.
+   docker service logs --follow  "${DEPLOYMENT_STACK_NAME}_portainer"      #Used to view the logs of a Docker service in real-time.
    ```
 
 ## Setup
 
-1. Mirror this branch to your repository
-   ```shell
-   TBD
-   ```
-1. Configure HAProxy
-   ```shell
-   cp -a etc/haproxy.cfg-example etc/haproxy.cfg
-   vi etc/haproxy.cfg # modify for yourself
-   ```
 1. Commit changes and see for CD pipeline for deployment into `devel` cluster
-1. Test Release Candidates to deploy pipelines against ALL (except `prod`) clusters
-   1. Make tag in format `haproxy[a-z]*-rcXX`
-   1. Start pipeline against the tag in your CI/CD platform
-1. Test Release to deploy pipelines against ALL clusters
-   1. Make tag in format `haproxy[a-z]*-YYYYMMDDxx`
-   1. Start pipeline against the tag in your CI/CD platform
+2. Test Release Candidates to deploy pipelines against ALL (except `prod`) clusters
+
+   2.1 Make tag in format `portainer[a-z]*-rcXX`
+
+   2.2 Start pipeline against the tag in your CI/CD platform
+3. Test Release to deploy pipelines against ALL clusters
+
+   3.1 Make tag in format `portainer[a-z]*-YYYYMMDDxx`
+
+   3.2 Start pipeline against the tag in your CI/CD platform
+
+4. Add label to cluster  
+   ```shell
+   docker node update --label-add "example.org=true" [name of the target Swarm node you are adding the label]
+   ```
