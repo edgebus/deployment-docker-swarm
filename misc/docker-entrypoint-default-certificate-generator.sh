@@ -1,11 +1,45 @@
 #!/bin/sh
 
+set -x
+
 # TODO: remove
 apk add openssl
+
+set -u
 
 if ! command -v openssl >/dev/null 2>&1; then
     echo "OpenSSL is NOT installed. Cannot generate default certificate for organization '${DEFAULT_CERT_ORGANIZATION}'. Pls, use proper Traefik image for the purpose." >&2
     exit 1
+fi
+
+if [[ -z "${DEFAULT_CERT_COUNTRY:-}" ]]; then
+  echo "Error: you not set parameter DEFAULT_CERT_COUNTRY" 
+  exit 2 
+fi
+
+if [[ -z "${DEFAULT_CERT_STATE:-}" ]]; then
+  echo "Error: you not set parameter DEFAULT_CERT_STATE" 
+  exit 3 
+fi
+
+if [[ -z "${DEFAULT_CERT_ORGANIZATION:-}" ]]; then 
+  echo "Error: you not set parameter DEFAULT_CERT_ORGANIZATION"
+  exit 4 
+fi
+
+if [[ -z "${DEFAULT_CERT_COMMON_NAME:-}" ]]; then 
+  echo "Error: you not set parameter DEFAULT_CERT_COMMON_NAME" 
+  exit 5 
+fi
+
+if [[ -z "${DEFAULT_CERT_EMAIL_ADDRESS:-}" ]]; then
+  echo "Error: you not set parameter DEFAULT_CERT_EMAIL_ADDRESS" 
+  exit 6
+fi
+
+if [[ -z "${DEFAULT_CERT_ROOT_DOMAIN:-}" ]]; then
+  echo "Error: you not set parameter DEFAULT_CERT_ROOT_DOMAIN" 
+  exit 7
 fi
 
 openssl genrsa -out /root/ca.key 4096
@@ -23,7 +57,7 @@ openssl req -new -subj \
 cat <<EOF > /root/ca-ext.conf
 subjectAltName = @alt_names
 [alt_names]
-DNS.1 = $DEFAULT_CERT_ROOT_DOMAIN
+DNS.1 = traefik.$DEFAULT_CERT_ROOT_DOMAIN
 DNS.2 = *.$DEFAULT_CERT_ROOT_DOMAIN
 EOF
 

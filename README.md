@@ -54,7 +54,7 @@ Commits trigger deploy to **devel** cluster ONLY.
    export DEPLOYMENT_PIPELINE_URL="http://ci.example.org/job/42"
    export DEPLOYMENT_VERSION="$(git rev-parse --short HEAD)"
    ```
-2. Generate Docker Stack file
+1. Generate Docker Stack file
    ```shell
    cat stack.yml.mustache \
    | docker run --interactive --rm \
@@ -73,11 +73,11 @@ Commits trigger deploy to **devel** cluster ONLY.
          --config-env \
    | tee stack.local.yml
    ```
-3. Deploy stack
+1. Deploy stack
    ```shell
    docker stack deploy --detach=false --compose-file stack.local.yml  "${DEPLOYMENT_STACK_NAME}"
    ```
-4. Monitoring
+1. Monitoring
    ```shell
    docker stack ps               "${DEPLOYMENT_STACK_NAME}"                #Lists the tasks that are running as part of the specified stack.
    docker service logs --follow  "${DEPLOYMENT_STACK_NAME}_traefik"      #Used to view the logs of a Docker service in real-time.
@@ -86,18 +86,27 @@ Commits trigger deploy to **devel** cluster ONLY.
 ## Setup
 
 1. Commit changes and see for CD pipeline for deployment into `devel` cluster
-2. Test Release Candidates to deploy pipelines against ALL (except `prod`) clusters
+1. Test Release Candidates to deploy pipelines against ALL (except `prod`) clusters
 
    2.1 Make tag in format `traefik[a-z]*-rcXX`
 
    2.2 Start pipeline against the tag in your CI/CD platform
-3. Test Release to deploy pipelines against ALL clusters
+1. Test Release to deploy pipelines against ALL clusters
 
    3.1 Make tag in format `traefik[a-z]*-YYYYMMDDxx`
 
    3.2 Start pipeline against the tag in your CI/CD platform
-
-4. Add label to cluster  
+1. Add label to cluster  
    ```shell
    docker node update --label-add "example.org=true" [name of the target Swarm node you are adding the label]
+   ```
+1. If you want to creare self-sighned sertificate you need to add this to MANIFEST file
+   ```shell
+   traefik.certificateAuthority.name.common=traefik.example.org
+   traefik.certificateAuthority.country=UA
+   traefik.certificateAuthority.state=Kyiv
+   traefik.certificateAuthority.organization=DemoCA1
+   traefik.certificateAuthority.organizationUnit=IT
+   traefik.certificateAuthority.emailAddress=DemoCA1@example.org
+   traefik.certificateAuthority.rootDomain=example.org
    ```
