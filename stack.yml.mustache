@@ -170,8 +170,8 @@ services:
       update_config:
         # The number of containers to update at a time.
         parallelism: 1
-        # Order of operations during updates
-        order: {{deploy.update_config.order}}
+        # Order of operations during updates. We cannot use 'start-first' due to host ports 80 and 443 are busy
+        order: stop-first
         # What to do if an update fails
         failure_action: pause
         # The time to wait between updating a group of containers
