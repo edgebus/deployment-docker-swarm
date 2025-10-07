@@ -5,3 +5,13 @@
 .secret/
 
 .DS_Store
+
+#
+# MANIFEST-demo is used by use-cases as sample
+#
+MANIFEST-demo
+
+#
+# stack.yml is generated
+#
+stack.yml
