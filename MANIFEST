@@ -97,10 +97,10 @@
 #traefik.entryPoints.websecure.port=443
 #traefik.entryPoints.websecure.protocol=tcp
 
-#traefik.certificateAuthority.name.common=traefik.polina.org
+#traefik.certificateAuthority.name.common=traefik.maintenance.example.org
 #traefik.certificateAuthority.country=UA
 #traefik.certificateAuthority.state=Kyiv
-#traefik.certificateAuthority.organization=DemoCA1
+#traefik.certificateAuthority.organization=DemoCA
 #traefik.certificateAuthority.organizationUnit=IT
-#traefik.certificateAuthority.emailAddress=DemoCA1@example.org
-#traefik.certificateAuthority.rootDomain=polina.org
+#traefik.certificateAuthority.emailAddress=DemoCA@example.org
+#traefik.certificateAuthority.rootDomain=maintenance.example.org

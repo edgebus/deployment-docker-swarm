@@ -105,8 +105,8 @@ Commits trigger deploy to **devel** cluster ONLY.
    traefik.certificateAuthority.name.common=traefik.example.org
    traefik.certificateAuthority.country=UA
    traefik.certificateAuthority.state=Kyiv
-   traefik.certificateAuthority.organization=DemoCA1
+   traefik.certificateAuthority.organization=DemoCA
    traefik.certificateAuthority.organizationUnit=IT
-   traefik.certificateAuthority.emailAddress=DemoCA1@example.org
+   traefik.certificateAuthority.emailAddress=DemoCA@example.org
    traefik.certificateAuthority.rootDomain=example.org
    ```

@@ -1,3 +1,4 @@
+# Developer Notes
 
 - [How to create a valid self signed SSL Certificate?](https://www.youtube.com/watch?v=VH4gXcvkmOY)
 - [Build Your Own Certificate Authority on Linux (Self-Signed SSL Certs)](https://youtu.be/PuWdFOOH5lA?si=gd6nIpgL5OBR4PUq)
@@ -17,7 +18,7 @@
     ```
 3. Створення CSR (Certificate Signing Request)
     ```shell
-    openssl req -new -subj "/C=UA/ST=Kyiv/L=Kyiv/O=DemoCA/OU=IT/CN=traefik.polina.org/emailAddress=DemoCA@gmail.com" -key Demo.key -out server.csr
+    openssl req -new -subj "/C=UA/ST=Kyiv/L=Kyiv/O=DemoCA/OU=IT/CN=traefik.mydomain/emailAddress=DemoCA@gmail.com" -key Demo.key -out server.csr
     ```
 4. Додаємо SAN (Subject Alternative Name)
     ```shell
@@ -27,8 +28,8 @@
     subjectAltName = @alt_names
 
     [alt_names]
-    DNS.1 = traefik.polina.org
-    DNS.2 = *.polina.org
+    DNS.1 = traefik.mydomain
+    DNS.2 = *.mydomain
     ```
 5. Підписання CSR сертефікатом CA
     ```shell

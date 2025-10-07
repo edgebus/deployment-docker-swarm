@@ -41,15 +41,15 @@
         "X-Real-IP" = "" # Remove buggy X-Real-IP header. See https://github.com/traefik/traefik/issues/8497
 
   [http.routers.dashboard]
-    rule = "Host(`traefik.polina.org`)"
+    rule = "Host(`traefik.maintenance.example.org`)"
     service = "api@internal"
     entrypoints = ["websecure"]
     #middlewares = ["internal-ips"]
     [http.routers.dashboard.tls]
       certResolver = "defaultCertificatesResolver"
       [[http.routers.dashboard.tls.domains]]
-        main = "traefik.polina.org"
-        #sans = ["*.polina.org"]
+        main = "traefik.maintenance.example.org"
+        #sans = ["*.maintenance.example.org"]
 
 
 [tls.stores]

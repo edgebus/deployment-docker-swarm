@@ -7,6 +7,7 @@
         "theanurin",
         "traefik",
         "traefiksomething",
-        "ulimits"
+        "ulimits",
+        "websecure"
     ]
 }
