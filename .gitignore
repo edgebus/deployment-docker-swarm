@@ -9,7 +9,7 @@
 #
 # MANIFEST-demo is used by use-cases as sample
 #
-MANIFEST-demo
+MANIFEST-demo-*
 
 #
 # stack.yml is generated

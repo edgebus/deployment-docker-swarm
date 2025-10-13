@@ -89,34 +89,25 @@ services:
       DEFAULT_CERT_EMAIL_ADDRESS: {{emailAddress}}
       DEFAULT_CERT_ROOT_DOMAIN: {{rootDomain}}
 {{/certificateAuthority}}
-
       TRAEFIK_ENTRYPOINTS_WEB_ADDRESS: "0.0.0.0:80"
 {{#accesslog}}
       TRAEFIK_ACCESSLOG_FORMAT: {{format}}
 {{#fields}}
       TRAEFIK_ACCESSLOG_FIELDS_DEFAULTMODE: {{defaultMode}}
-      TRAEFIK_ACCESSLOG_FIELDS_NAMES_CLIENTUSERNAME: {{names.clientUsername}}
-{{#headers}}
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_DEFAULTMODE: {{defaultMode}}
-{{#names}}
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_HOST: {{host}}
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_X_FORWARDED_FOR: {{x.forwarded.for}}
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_X_REAL_IP: {{x.real.ip}}
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_X_FORWARDED_PROTO: {{x.forwarded.proto}}
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_USER_AGENT: {{user.agent}}
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_REFERER: {{referer}}
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_CONTENT_TYPE: {{content.type}}
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_ACCEPT: {{accept}}
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_ACCEPT_LANGUAGE: {{accept.language}}
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_ACCEPT_ENCODING: {{accept.encoding}}
-{{/names}}
-{{/headers}}
+{{#names.$array}}
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_{{.}}: "drop"
+{{/names.$array}}
+{{#?headersDefaultMode}}
+      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_DEFAULTMODE: {{.}}
+{{/?headersDefaultMode}}
+{{#keepHeaders.$array}}
+      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_{{ . }}: "keep"
+{{/keepHeaders.$array}}
 {{/fields}}
 {{/accesslog}}
-
-      TRAEFIK_LOG_LEVEL: {{log.level}}    
+      TRAEFIK_LOG_LEVEL: {{log.level}}
       TRAEFIK_LOG_FORMAT: {{log.format}}
-{{#providers}}
+{{#?providers}}
       TRAEFIK_PROVIDERS_FILE_FILENAME: {{file.filename}}
       TRAEFIK_PROVIDERS_FILE_WATCH: {{file.watch}}
 {{#docker}}
@@ -127,10 +118,11 @@ services:
       TRAEFIK_PROVIDERS_DOCKER_SWARMMODE: {{swarmmode}}
       TRAEFIK_PROVIDERS_DOCKER_SWARMMODEREFRESHSECONDS: {{swarmmoderefreshseconds}}
 {{/docker}}
-{{/providers}}
-      TRAEFIK_API_INSECURE: {{api.insecure}}
-      TRAEFIK_DASHBOARD: {{api.dashboard}}
-
+{{/?providers}}
+{{#?api}}
+      TRAEFIK_API_INSECURE: {{insecure}}
+      TRAEFIK_DASHBOARD: {{dashboard}}
+{{/?api}}
       TRAEFIK_ENTRYPOINTS_WEB_FORWARDEDHEADERS_INSECURE: "true"
       TRAEFIK_ENTRYPOINTS_WEB_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: "900s"
       TRAEFIK_ENTRYPOINTS_WEB_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT: "900s"

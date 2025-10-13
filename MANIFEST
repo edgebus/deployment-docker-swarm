@@ -103,23 +103,27 @@ traefik.entryPoints.web.protocol=tcp
 #traefik.certificateAuthority.emailAddress=DemoCA@example.org
 #traefik.certificateAuthority.rootDomain=maintenance.example.org
 
-#traefik.accesslog.format="json"
-#traefik.accesslog.fields.defaultMode="keep"
-#traefik.accesslog.fields.names.clientUsername="drop"
-#traefik.accesslog.fields.headers.defaultMode="drop"
-#traefik.accesslog.fields.headers.names.host="keep"
-#traefik.accesslog.fields.headers.names.x.forwarded.for="keep"
-#traefik.accesslog.fields.headers.names.x.real.ip="keep"
-#traefik.accesslog.fields.headers.names.x.forwarded.proto="keep"
-#traefik.accesslog.fields.headers.names.user.agent="keep"
-#traefik.accesslog.fields.headers.names.referer="keep"
-#traefik.accesslog.fields.headers.names.content.type="keep"
-#traefik.accesslog.fields.headers.names.accept="ololo"
-#traefik.accesslog.fields.headers.names.accept.language="keep"
-#traefik.accesslog.fields.headers.names.accept.encoding="keep"
+#
+# Choose format "common", "json". See https://doc.traefik.io/traefik/v2.11/observability/access-logs/#format
+#
+traefik.accesslog.format="common"
+traefik.accesslog.fields.defaultMode="keep"
+traefik.accesslog.fields.names.0="clientUsername"
+traefik.accesslog.fields.headersDefaultMode="drop"
+traefik.accesslog.fields.keepHeaders.0="Host"
+traefik.accesslog.fields.keepHeaders.1="X-Real-IP"
+traefik.accesslog.fields.keepHeaders.2="Content-Type"
 
-#traefik.log.level="WARN"
-#traefik.log.format="json"
+#
+# Alternative logging levels are DEBUG, INFO, WARN, ERROR, FATAL, and PANIC.
+# See https://doc.traefik.io/traefik/v2.11/observability/logs/#level
+#
+traefik.log.level="WARN"
+#
+# Choose logging format "common", "json"
+# https://doc.traefik.io/traefik/v2.11/observability/logs/#format
+#
+traefik.log.format="json"
 
 #traefik.providers.file.filename="/etc/traefik/traefik-dynamic.toml"
 #traefik.providers.file.watch="false"
