@@ -9,7 +9,7 @@
    ```
 1. Generate `stack.yaml`
    ```shell
-   cat stack.yml.mustache \
+   cat stack.yml.liquid \
     | docker run --interactive --rm \
         --mount "type=bind,source=${PWD}/MANIFEST,target=/tmp/MANIFEST" \
         --mount "type=bind,source=${PWD}/MANIFEST-demo-minimal-launch,target=/tmp/MANIFEST-demo-minimal-launch" \
@@ -19,8 +19,8 @@
         --env DEPLOYMENT_PIPELINE_URL="http://ci.example.org/job/42" \
         --env DEPLOYMENT_VERSION="00000000" \
         --env DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS="" \
-        theanurin/configuration-templates:20250710 \
-            --engine mustache \
+        theanurin/configuration-templates:20251014 \
+            --engine liquid \
             --config-file="/tmp/MANIFEST" \
             --config-file="/tmp/MANIFEST-demo-minimal-launch" \
             --config-env \

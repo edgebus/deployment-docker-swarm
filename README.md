@@ -56,7 +56,7 @@ Commits trigger deploy to **devel** cluster ONLY.
    ```
 1. Generate Docker Stack file
    ```shell
-   cat stack.yml.mustache \
+   cat stack.yml.liquid \
    | docker run --interactive --rm \
       --mount "type=bind,source=${PWD}/MANIFEST,target=/tmp/MANIFEST" \
       --mount "type=bind,source=${PWD}/MANIFEST-${DEPLOYMENT_CLUSTER},target=/tmp/MANIFEST-${DEPLOYMENT_CLUSTER}" \
@@ -66,8 +66,8 @@ Commits trigger deploy to **devel** cluster ONLY.
       --env DEPLOYMENT_PIPELINE_URL \
       --env DEPLOYMENT_VERSION \
       --env DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS="" \
-      theanurin/configuration-templates:20250710 \
-         --engine mustache \
+      theanurin/configuration-templates:20251014 \
+         --engine liquid \
          --config-file="/tmp/MANIFEST" \
          --config-file="/tmp/MANIFEST-${DEPLOYMENT_CLUSTER}" \
          --config-env \

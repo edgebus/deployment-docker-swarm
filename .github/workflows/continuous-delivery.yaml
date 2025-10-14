@@ -96,7 +96,7 @@ jobs:
               --mount "type=bind,source=${PWD}/MANIFEST,target=/tmp/MANIFEST" \
               --mount "type=bind,source=${PWD}/MANIFEST-${{ matrix.environment }},target=/tmp/MANIFEST-${{ matrix.environment }}" \
               theanurin/configuration-templates:20250503 \
-                --engine mustache \
+                --engine liquid \
                 --config-file="/tmp/MANIFEST" \
                 --config-file="/tmp/MANIFEST-${{ matrix.environment }}"
           )
@@ -123,7 +123,7 @@ jobs:
 
             DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS=true
           fi
-          cat stack.yml.mustache | \
+          cat stack.yml.liquid | \
             docker run \
               --interactive \
               --rm \
@@ -136,7 +136,7 @@ jobs:
               --env DEPLOYMENT_PIPELINE_URL \
               --env DEPLOYMENT_VERSION \
               theanurin/configuration-templates:20250503 \
-                --engine mustache \
+                --engine liquid \
                 --config-file="/tmp/MANIFEST" \
                 --config-file="/tmp/MANIFEST-${{ matrix.environment }}" \
                 --config-env \

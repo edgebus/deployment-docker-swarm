@@ -3,7 +3,7 @@ version: "3.9"
 
 configs:
   docker-expand-envs-entrypoint.sh:
-    name: {{name}}.sh-{{$root.DEPLOYMENT_JOB_ID}}
+    name: {{name}}-docker-expand-envs-entrypoint.sh-{{$root.DEPLOYMENT_JOB_ID}}
 {{#$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
     external: true
 {{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}

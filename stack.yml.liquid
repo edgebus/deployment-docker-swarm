@@ -1,0 +1,23 @@
+version: "3.9"
+
+configs:
+  docker-expand-envs-entrypoint.sh:
+    name: {{ traefik.name }}-docker-expand-envs-entrypoint.sh-{{ DEPLOYMENT_JOB_ID }}
+{%- if DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS == "true" %}
+    external: true
+{%- else %}
+    file: ./misc/docker-expand-envs-entrypoint.sh
+    labels:
+      - "io.edgebus.ops=true"
+      - "io.edgebus.ops.atom.{{ DEPLOYMENT_CLUSTER }}.{{ traefik.name }}=true"
+      - "io.edgebus.ops.commit={{ DEPLOYMENT_COMMIT }}"
+{%- if traefik.label.commit %}
+      - "{{ traefik.label.commit }}={{ DEPLOYMENT_COMMIT }}"
+{%- endif %}
+{%- if traefik.label.pipeline %}
+      - "{{ traefik.label.pipeline }}={{ DEPLOYMENT_PIPELINE_URL }}"
+{%- endif %}
+{%- if traefik.label.version %}
+      - "{{ traefik.label.version }}={{ DEPLOYMENT_VERSION }}"
+{%- endif %}
+{%- endif %}
