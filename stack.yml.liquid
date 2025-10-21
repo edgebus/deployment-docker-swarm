@@ -110,17 +110,20 @@ services:
       DEFAULT_CERT_ROOT_DOMAIN: {{ traefik.conf.default_certificate.root_domain }}
 {%- endif %}
       TRAEFIK_ENTRYPOINTS_WEB_ADDRESS: "0.0.0.0:80"
-{% comment %}
 {%- if traefik.conf.accesslog %}
-{%- for accesslog in traefik.conf.accesslog['$array'] %}
-      TRAEFIK_ACCESSLOG_FORMAT: {{ accesslog.format }}
-      TRAEFIK_ACCESSLOG_FIELDS_DEFAULTMODE: {{ accesslog.defaultMode }}
-      TRAEFIK_ACCESSLOG_FIELDS_NAMES: "drop"
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_DEFAULTMODE: {{ accesslog.fields.headers_default_mode }}
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES: "keep"
+      TRAEFIK_ACCESSLOG_FORMAT: {{ traefik.conf.accesslog.format }}
+      TRAEFIK_ACCESSLOG_FIELDS_DEFAULTMODE: {{ traefik.conf.accesslog.fields.default_mode }}
+{%- for fields in traefik.conf.accesslog.fields.names['$array'] %}
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_{{ fields }}: {{ fields }}
+{%- comment %}
+      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES: {{ fields }}
+{%- endcomment %}
 {%- endfor %}
+{%- for keep_headers in traefik.conf.accesslog.fields.keep_headers['$array'] %}
+      TRAEFIK_ACCESSLOG_FIELDS_KEEP_HEADERS: {{ keep_headers }}
+{%- endfor %}
+      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_DEFAULTMODE: {{ traefik.conf.accesslog.fields.headers_default_mode }}    
 {%- endif %}
-{% endcomment %}
 
 {%- if traefik.conf.log %}
       TRAEFIK_LOG_LEVEL: {{ traefik.conf.log.level }}
