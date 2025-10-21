@@ -1,9 +1,14 @@
 {
     "cSpell.words": [
+        "accesslog",
         "devel",
         "edgebus",
-        "haproxysomething",
+        "nofile",
         "pipefail",
-        "theanurin"
+        "theanurin",
+        "traefik",
+        "traefiksomething",
+        "ulimits",
+        "websecure"
     ]
 }

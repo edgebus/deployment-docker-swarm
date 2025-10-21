@@ -1,6 +1,6 @@
-# HAProxy Deployment
+# Traefik Deployment
 
-- Upstream of this branch is https://github.com/edgebus/deployment-docker-swarm/tree/haproxy%23main
+- Upstream of this branch is https://github.com/edgebus/deployment-docker-swarm/tree/traefik%23main
 - How to use [EdgeBus Ops](https://docs.edgebus.io/ops/swarm) for Docker Swarm
 
 ![Diagram](docs/diagram.drawio.svg)
@@ -16,21 +16,21 @@ To launch automated deploy (via your CI/CD platform) use:
 
 |                   | Format                                | What to deploy                                               |
 | ----------------- | ------------------------------------- | ------------------------------------------------------------ |
-| Release Candidate | `haproxy[a-z]*-YYYYMMDDhhmmss-rcXxxx` | create deploy pipelines against ALL (except `prod`) clusters |
-| Release           | `haproxy[a-z]*-YYYYMMDDhhmmss`        | create deploy pipelines against ALL clusters                 |
+| Release Candidate | `traefik[a-z]*-YYYYMMDDhhmmss-rcXxxx` | create deploy pipelines against ALL (except `prod`) clusters |
+| Release           | `traefik[a-z]*-YYYYMMDDhhmmss`        | create deploy pipelines against ALL clusters                 |
 
 Examples:
 
-- `haproxysomething-20250503-rc000`
-- `haproxysomething-20250503-rc00`
-- `haproxysomething-20250503-rc0`
-- `haproxysomething-2025050323-rc0`
-- `haproxysomething-202505032359-rc0`
-- `haproxysomething-20250503235959-rc0`
-- `haproxysomething-20250503`
-- `haproxysomething-2025050323`
-- `haproxysomething-202505032359`
-- `haproxysomething-20250503235959`
+- `traefiksomething-20250503-rc000`
+- `traefiksomething-20250503-rc00`
+- `traefiksomething-20250503-rc0`
+- `traefiksomething-2025050323-rc0`
+- `traefiksomething-202505032359-rc0`
+- `traefiksomething-20250503235959-rc0`
+- `traefiksomething-20250503`
+- `traefiksomething-2025050323`
+- `traefiksomething-202505032359`
+- `traefiksomething-20250503235959`
 
 ### Commits
 
@@ -54,9 +54,9 @@ Commits trigger deploy to **devel** cluster ONLY.
    export DEPLOYMENT_PIPELINE_URL="http://ci.example.org/job/42"
    export DEPLOYMENT_VERSION="$(git rev-parse --short HEAD)"
    ```
-1. Generate Docker Stack fil
+1. Generate Docker Stack file
    ```shell
-   cat stack.yml.mustache \
+   cat stack.yml.liquid \
    | docker run --interactive --rm \
       --mount "type=bind,source=${PWD}/MANIFEST,target=/tmp/MANIFEST" \
       --mount "type=bind,source=${PWD}/MANIFEST-${DEPLOYMENT_CLUSTER},target=/tmp/MANIFEST-${DEPLOYMENT_CLUSTER}" \
@@ -65,48 +65,48 @@ Commits trigger deploy to **devel** cluster ONLY.
       --env DEPLOYMENT_JOB_ID \
       --env DEPLOYMENT_PIPELINE_URL \
       --env DEPLOYMENT_VERSION \
-      theanurin/configuration-templates:20250503 \
-         --engine mustache \
+      --env DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS="" \
+      theanurin/configuration-templates:20251014 \
+         --engine liquid \
          --config-file="/tmp/MANIFEST" \
          --config-file="/tmp/MANIFEST-${DEPLOYMENT_CLUSTER}" \
          --config-env \
    | tee stack.local.yml
    ```
-1. Bypass docker socket to your workstation as `~/tmp/docker-swarm.sock` (where `devel-01.example.org` is Docker Swarm manager node of a cluster)
-
-   ```shell
-   rm -f ~/tmp/docker-swarm.sock; ssh -N -L ~/tmp/docker-swarm.sock:/var/run/docker.sock devel-01.example.org
-
-   export DOCKER_HOST=unix://$HOME/tmp/docker-swarm.sock
-   ```
-
 1. Deploy stack
    ```shell
-   export DOCKER_HOST=unix://$HOME/tmp/docker-swarm.sock
-   docker stack deploy --compose-file stack.local.yml  "${DEPLOYMENT_STACK_NAME}"
+   docker stack deploy --detach=false --compose-file stack.local.yml  "${DEPLOYMENT_STACK_NAME}"
    ```
 1. Monitoring
    ```shell
-   export DOCKER_HOST=unix://$HOME/tmp/docker-swarm.sock
-   docker stack ps               "${DEPLOYMENT_STACK_NAME}"
-   docker service logs --follow  "${DEPLOYMENT_STACK_NAME}_haproxy"
+   docker stack ps               "${DEPLOYMENT_STACK_NAME}"                #Lists the tasks that are running as part of the specified stack.
+   docker service logs --follow  "${DEPLOYMENT_STACK_NAME}_traefik"      #Used to view the logs of a Docker service in real-time.
    ```
 
 ## Setup
 
-1. Mirror this branch to your repository
-   ```shell
-   TBD
-   ```
-1. Configure HAProxy
-   ```shell
-   cp -a etc/haproxy.cfg-example etc/haproxy.cfg
-   vi etc/haproxy.cfg # modify for yourself
-   ```
 1. Commit changes and see for CD pipeline for deployment into `devel` cluster
 1. Test Release Candidates to deploy pipelines against ALL (except `prod`) clusters
-   1. Make tag in format `haproxy[a-z]*-rcXX`
-   1. Start pipeline against the tag in your CI/CD platform
+
+   2.1 Make tag in format `traefik[a-z]*-rcXX`
+
+   2.2 Start pipeline against the tag in your CI/CD platform
 1. Test Release to deploy pipelines against ALL clusters
-   1. Make tag in format `haproxy[a-z]*-YYYYMMDDxx`
-   1. Start pipeline against the tag in your CI/CD platform
+
+   3.1 Make tag in format `traefik[a-z]*-YYYYMMDDxx`
+
+   3.2 Start pipeline against the tag in your CI/CD platform
+1. Add label to cluster  
+   ```shell
+   docker node update --label-add "example.org=true" [name of the target Swarm node you are adding the label]
+   ```
+1. If you want to creare self-sighned sertificate you need to add this to MANIFEST file
+   ```shell
+   traefik.certificateAuthority.name.common=traefik.example.org
+   traefik.certificateAuthority.country=UA
+   traefik.certificateAuthority.state=Kyiv
+   traefik.certificateAuthority.organization=DemoCA
+   traefik.certificateAuthority.organizationUnit=IT
+   traefik.certificateAuthority.emailAddress=DemoCA@example.org
+   traefik.certificateAuthority.rootDomain=example.org
+   ```

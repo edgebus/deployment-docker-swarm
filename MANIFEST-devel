@@ -2,13 +2,11 @@
 # Override values of MANIFEST for devel cluster
 #
 
-#network.0=...
+#traefik.network.0=traefik-tier
 #...
-#network.z=...
+#traefik.network.z=...
 
-#placement_constraint.0=example.org
-#placement_constraint.1=example.org.devel
-#placement_constraint.2=example.org.devel.cluster
-#placement_constraint.3=example.org.devel.cluster.haproxy
-
-#replicas=1
+#traefik.placement_constraint.0=example.org
+#traefik.placement_constraint.1=example.org.devel
+#traefik.placement_constraint.2=example.org.devel.cluster
+#traefik.placement_constraint.3=example.org.devel.cluster.traefik

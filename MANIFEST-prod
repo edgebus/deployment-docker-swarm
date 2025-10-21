@@ -2,13 +2,11 @@
 # Override values of MANIFEST for prod cluster
 #
 
-#network.0=...
+#traefik.network.0=traefik-tier
 #...
-#network.z=...
+#traefik.network.z=...
 
-#placement_constraint.0=example.org
-#placement_constraint.1=example.org.prod
-#placement_constraint.2=example.org.prod.cluster
-#placement_constraint.3=example.org.prod.cluster.haproxy
-
-#replicas=4
+#traefik.placement_constraint.0=example.org
+#traefik.placement_constraint.1=example.org.prod
+#traefik.placement_constraint.2=example.org.prod.cluster
+#traefik.placement_constraint.3=example.org.prod.cluster.traefik

@@ -1,91 +1,204 @@
 #
 # Define a set of swarm networks to be attached to the service
 #
-#network.0=...
+traefik.stack.network.0=traefik-tier
 #...
-#network.z=...
+#traefik.stack.network.z=...
 
 #
 # Define a set of placement constraints
 #
-#placement_constraint.0=example.org
+traefik.stack.placement_constraint.0=example.org
 #...
-#placement_constraint.z=...
+#traefik.stack.placement_constraint.z=...
 
 #
 # Name of commit label
 #
-#label.commit=example.org.stack.commit
+traefik.stack.label.commit=example.org.stack.commit
 
 #
 # Name of pipeline label
 #
-#label.pipeline=example.org.stack.pipeline
+traefik.stack.label.pipeline=example.org.stack.pipeline
 
 #
 # Name of version label
 #
-#label.version=example.org.stack.version
+traefik.stack.label.version=example.org.stack.version
 
 #
 # Name of service
 #
-name=haproxy
+traefik.stack.name=traefik
 
 #
 # Network alias
 #
-alias=haproxy
-
-#
-# Number of replicas
-#
-replicas=2
+traefik.stack.alias=traefik
 
 #
 # Limit processes/threads
 #
-ulimits.nproc=256
+traefik.stack.ulimits.nproc=256
 
 #
 # Limit of file descriptors.
 # Maximum number of opened files.
 #
-ulimits.nofile.hard=16384
+traefik.stack.ulimits.nofile.hard=16384
 
 #
 # Limit of file descriptors.
 # May be changed later by an app, up to the hard limit value, by the process running with these limits.
 #
-ulimits.nofile.soft=8192
+traefik.stack.ulimits.nofile.soft=8192
 
 #
 # How much of the available CPU resources, as number of cores, a container can use.
 # The platform must guarantee the container can allocate at least the configured amount.
 #
-resources.reservations.cpus=0.01
+traefik.stack.deploy.resources.reservations.cpus=0.01
 
 #
 # How much of the available amount of memory a container can allocate.
 # The platform must guarantee the container can allocate at least the configured amount.
 #
-resources.reservations.memory=8M
+traefik.stack.deploy.resources.reservations.memory=8M
 
 #
 # How much of the available CPU resources, as number of cores, a container can use.
 # The platform must prevent the container to allocate more.
 #
-resources.limits.cpus=1.05
+traefik.stack.deploy.resources.limits.cpus=1.05
 
 #
 # How much of the available amount of memory a container can allocate.
 # The platform must prevent the container to allocate more.
 #
-resources.limits.memory=64M
+traefik.stack.deploy.resources.limits.memory=64M
 
 #
-# Order of operations during updates
-# See more https://docs.docker.com/reference/compose-file/deploy/#update_config
-# Enum: start-first, stop-first
+# Choose format "common", "json". See https://doc.traefik.io/traefik/v2.11/observability/access-logs/#format
 #
-deploy.update_config.order=start-first
+traefik.conf.accesslog.format="common"
+traefik.conf.accesslog.fields.default_mode="keep"
+traefik.conf.accesslog.fields.names.0="clientUsername"
+traefik.conf.accesslog.fields.headers_default_mode="drop"
+traefik.conf.accesslog.fields.keep_headers.0="Host"
+traefik.conf.accesslog.fields.keep_headers.1="X-Real-IP"
+traefik.conf.accesslog.fields.keep_headers.2="Content-Type"
+
+#
+# Alternative logging levels are DEBUG, INFO, WARN, ERROR, FATAL, and PANIC.
+# See https://doc.traefik.io/traefik/v2.11/observability/logs/#level
+#
+traefik.conf.log.level="WARN"
+#
+# Choose logging format "common", "json"
+# https://doc.traefik.io/traefik/v2.11/observability/logs/#format
+#
+traefik.conf.log.format="json"
+
+#
+# Port on which to listen for incoming connections and packets
+#
+traefik.conf.entrypoints.web.port=80
+#
+# Protocol to use (tcp or udp)
+#
+traefik.conf.entrypoints.web.protocol=tcp
+#
+# You can configure Traefik to trust the forwarded headers information
+# (X-Forwarded-*) by insecure mode (always trusting forwarded headers).
+# See: https://doc.traefik.io/traefik/v2.11/routing/entrypoints/#forwarded-headers
+#
+#traefik.conf.entrypoints.web.forwarded_headers.kind="insecure"
+#
+# You can configure Traefik to trust the forwarded headers information
+# (X-Forwarded-*) by IP whitelist.
+# See: https://doc.traefik.io/traefik/v2.11/routing/entrypoints/#forwarded-headers
+#
+#traefik.conf.entrypoints.web.forwarded_headers.kind="whitelist"
+#traefik.conf.entrypoints.web.forwarded_headers.whitelist.ip.0="127.0.0.1/32"
+#traefik.conf.entrypoints.web.forwarded_headers.whitelist.ip.1="192.168.1.7"
+#
+# Setup timeouts for incoming requests to the Traefik instance.
+# Setting them has no effect for UDP entryPoints.
+# See: https://doc.traefik.io/traefik/v2.11/routing/entrypoints/#respondingtimeouts
+#
+traefik.conf.entrypoints.web.timeout.read="900s"
+traefik.conf.entrypoints.web.timeout.write="900s"
+traefik.conf.entrypoints.web.timeout.idle="300s"
+
+#
+# Port on which to listen for incoming connections and packets
+#
+#traefik.conf.entrypoints.websecure.port=443
+#
+# Protocol to use (tcp or udp)
+#
+#traefik.conf.entrypoints.websecure.protocol=tcp
+#
+# You can configure Traefik to trust the forwarded headers information
+# (X-Forwarded-*) by insecure mode (always trusting forwarded headers).
+# See: https://doc.traefik.io/traefik/v2.11/routing/entrypoints/#forwarded-headers
+#
+#traefik.conf.entrypoints.websecure.forwarded_headers.kind="insecure"
+#
+# You can configure Traefik to trust the forwarded headers information
+# (X-Forwarded-*) by IP whitelist.
+# See: https://doc.traefik.io/traefik/v2.11/routing/entrypoints/#forwarded-headers
+#
+#traefik.conf.entrypoints.websecure.forwarded_headers.kind="whitelist"
+#traefik.conf.entrypoints.websecure.forwarded_headers.whitelist.ip.0="127.0.0.1/32"
+#traefik.conf.entrypoints.websecure.forwarded_headers.whitelist.ip.1="192.168.1.7"
+#
+# Setup timeouts for incoming requests to the Traefik instance.
+# Setting them has no effect for UDP entryPoints.
+# See: https://doc.traefik.io/traefik/v2.11/routing/entrypoints/#respondingtimeouts
+#
+#traefik.conf.entrypoints.websecure.timeout.read="900s"
+#traefik.conf.entrypoints.websecure.timeout.write="900s"
+#traefik.conf.entrypoints.websecure.timeout.idle="300s"
+
+#
+# Port on which to listen for incoming connections and packets
+#
+#traefik.conf.entrypoints.metrics.port=9323
+#
+# Protocol to use (tcp or udp)
+#
+#traefik.conf.entrypoints.metrics.protocol=tcp
+#
+# Setup timeouts for incoming requests to the Traefik instance.
+# Setting them has no effect for UDP entryPoints.
+# See: https://doc.traefik.io/traefik/v2.11/routing/entrypoints/#respondingtimeouts
+#
+#traefik.conf.entrypoints.metrics.timeout.read="60s"
+#traefik.conf.entrypoints.metrics.timeout.write="60s"
+#traefik.conf.entrypoints.metrics.timeout.idle="180s"
+
+#traefik.conf.providers.file.filename="/etc/traefik/traefik-dynamic.toml"
+#traefik.conf.providers.file.watch="false"
+#traefik.conf.providers.docker.endpoint="unix:///var/run/docker.sock"
+#traefik.conf.providers.docker.exposedbydefault="false"
+#traefik.conf.providers.docker.constraints="Label(`traefik.scope`, `apps`)"
+#traefik.conf.providers.docker.defaultrule="devel.xoob.gg"
+#traefik.conf.providers.docker.swarmmode="true"
+#traefik.conf.providers.docker.swarmmoderefreshseconds="5s"
+
+#traefik.conf.api.insecure="false"
+#traefik.conf.api.dashboard="true"
+
+#traefik.conf.metrics.prometheus.entrypoint="metrics"
+
+#
+# You may wish to generate own certificate by own Certificate Authority
+#
+#traefik.conf.default_certificate.country=UA
+#traefik.conf.default_certificate.emailAddress=DemoCA@example.org
+#traefik.conf.default_certificate.organization=DemoCA
+#traefik.conf.default_certificate.organizationUnit=IT
+#traefik.conf.default_certificate.root_domain=maintenance.example.org
+#traefik.conf.default_certificate.state=Kyiv

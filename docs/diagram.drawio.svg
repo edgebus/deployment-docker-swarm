@@ -113,7 +113,7 @@
                                     <div style=""></div>
                                     <div style="">
                                         <div style="">
-                                            stack.yml.mustache
+                                            stack.yml.liquid
                                             <br/>
                                         </div>
                                     </div>
@@ -123,7 +123,7 @@
                         </div>
                     </foreignObject>
                     <text x="5" y="146" fill="light-dark(#000000, #ffffff)" font-family="&quot;Tahoma&quot;" font-size="12px">
-                        stack.yml.mustache...
+                        stack.yml.liquid...
                     </text>
                 </switch>
             </g>

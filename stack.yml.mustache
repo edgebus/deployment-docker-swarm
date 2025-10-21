@@ -1,21 +1,47 @@
+{{#traefik}}
 version: "3.9"
 
 configs:
-  haproxy.cfg:
-    name: {{name}}.cfg-{{DEPLOYMENT_JOB_ID}}
-{{#DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+  docker-expand-envs-entrypoint.sh:
+    name: {{name}}-docker-expand-envs-entrypoint.sh-{{$root.DEPLOYMENT_JOB_ID}}
+{{#$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
     external: true
-{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-{{^DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
-    file: ./etc/{{DEPLOYMENT_CLUSTER}}/haproxy.cfg
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{^$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    file: ./misc/docker-expand-envs-entrypoint.sh
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
-{{/DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+  traefik-dynamic.toml:
+    name: {{name}}-dynamic.toml-{{$root.DEPLOYMENT_JOB_ID}}
+{{#$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    external: true
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+{{^$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+    file: ./etc/{{$root.DEPLOYMENT_CLUSTER}}/traefik-dynamic.toml
+    labels:
+      - "io.edgebus.ops=true"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
+{{/$root.DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS}}
+
+volumes:
+  traefik:
+    labels:
+      - "io.edgebus.ops=true"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
 
 networks:
   internet-access:
@@ -28,36 +54,110 @@ networks:
     internal: true
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{$root.label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{$root.label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{$root.label.version}}={{DEPLOYMENT_VERSION}}"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
 {{/network.$array}}
 
 services:
   {{name}}:
-    image: haproxy:3.0.10
+    image: theanurin/traefik:2.11.18-0
+    entrypoint:
+      - /usr/local/bin/docker-expand-envs-entrypoint.sh
+      - /entrypoint.sh
+      - traefik
+    ports:
+{{#entryPoints.$array}}
+      - published: {{port}}
+        target: {{port}}
+        protocol: {{protocol}}
+        mode: host
+{{/entryPoints.$array}}
+    volumes:
+      - traefik:/traefik-data
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+{{#certificateAuthority}}
+      DEFAULT_CERT_COMMON_NAME: {{name.common}}
+      DEFAULT_CERT_COUNTRY: {{country}}
+      DEFAULT_CERT_STATE: {{state}}
+      DEFAULT_CERT_ORGANIZATION: {{organization}}
+      DEFAULT_CERT_ORGANIZATION_UNIT: {{organizationUnit}}
+      DEFAULT_CERT_EMAIL_ADDRESS: {{emailAddress}}
+      DEFAULT_CERT_ROOT_DOMAIN: {{rootDomain}}
+{{/certificateAuthority}}
+      TRAEFIK_ENTRYPOINTS_WEB_ADDRESS: "0.0.0.0:80"
+{{#accesslog}}
+      TRAEFIK_ACCESSLOG_FORMAT: {{format}}
+{{#fields}}
+      TRAEFIK_ACCESSLOG_FIELDS_DEFAULTMODE: {{defaultMode}}
+{{#names.$array}}
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_{{.}}: "drop"
+{{/names.$array}}
+{{#?headersDefaultMode}}
+      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_DEFAULTMODE: {{.}}
+{{/?headersDefaultMode}}
+{{#keepHeaders.$array}}
+      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_{{ . }}: "keep"
+{{/keepHeaders.$array}}
+{{/fields}}
+{{/accesslog}}
+      TRAEFIK_LOG_LEVEL: {{log.level}}
+      TRAEFIK_LOG_FORMAT: {{log.format}}
+{{#?providers}}
+      TRAEFIK_PROVIDERS_FILE_FILENAME: {{file.filename}}
+      TRAEFIK_PROVIDERS_FILE_WATCH: {{file.watch}}
+{{#docker}}
+      TRAEFIK_PROVIDERS_DOCKER_ENDPOINT: {{endpoint}}
+      TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: {{exposedbydefault}}
+      TRAEFIK_PROVIDERS_DOCKER_CONSTRAINTS: {{constraints}}
+      TRAEFIK_PROVIDERS_DOCKER_DEFAULTRULE: {{defaultrule}}
+      TRAEFIK_PROVIDERS_DOCKER_SWARMMODE: {{swarmmode}}
+      TRAEFIK_PROVIDERS_DOCKER_SWARMMODEREFRESHSECONDS: {{swarmmoderefreshseconds}}
+{{/docker}}
+{{/?providers}}
+{{#?api}}
+      TRAEFIK_API_INSECURE: {{insecure}}
+      TRAEFIK_DASHBOARD: {{dashboard}}
+{{/?api}}
+      TRAEFIK_ENTRYPOINTS_WEB_FORWARDEDHEADERS_INSECURE: "true"
+      TRAEFIK_ENTRYPOINTS_WEB_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: "900s"
+      TRAEFIK_ENTRYPOINTS_WEB_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT: "900s"
+      TRAEFIK_ENTRYPOINTS_WEB_TRANSPORT_RESPONDINGTIMEOUTS_IDLETIMEOUT: "300s"
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS: "0.0.0.0:443"
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_FORWARDEDHEADERS_INSECURE: "true"
+      
+      TRAEFIK_ENTRYPOINTS_METRICS_ADDRESS: "0.0.0.0:9323"
+      TRAEFIK_ENTRYPOINTS_METRICS_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: "60s"
+      TRAEFIK_ENTRYPOINTS_METRICS_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT: "60s"
+      TRAEFIK_ENTRYPOINTS_METRICS_TRANSPORT_RESPONDINGTIMEOUTS_IDLETIMEOUT: "180s"
+
+      TRAEFIK_METRICS_PROMETHEUS_ENTRYPOINT: "metrics"
+
     configs:
-      - source: haproxy.cfg
-        target: /usr/local/etc/haproxy/haproxy.cfg
+      - source: docker-expand-envs-entrypoint.sh
+        target: /usr/local/bin/docker-expand-envs-entrypoint.sh
+        mode: 0755
+      - source: traefik-dynamic.toml
+        target: /etc/traefik/traefik-dynamic.toml
         mode: 0644
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     networks:
       internet-access: # Access to external Redis instance
 {{#network.$array}}
       {{ . }}:
         aliases:
-          - {{$root.alias}}
+          - {{alias}}
 {{/network.$array}}
     labels:
       - "io.edgebus.ops=true"
-      - "io.edgebus.ops.atom.{{DEPLOYMENT_CLUSTER}}.{{name}}=true"
-      - "io.edgebus.ops.commit={{DEPLOYMENT_COMMIT}}"
-      - "{{label.commit}}={{DEPLOYMENT_COMMIT}}"
-      - "{{label.pipeline}}={{DEPLOYMENT_PIPELINE_URL}}"
-      - "{{label.version}}={{DEPLOYMENT_VERSION}}"
+      - "io.edgebus.ops.atom.{{$root.DEPLOYMENT_CLUSTER}}.{{name}}=true"
+      - "io.edgebus.ops.commit={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.commit}}={{$root.DEPLOYMENT_COMMIT}}"
+      - "{{label.pipeline}}={{$root.DEPLOYMENT_PIPELINE_URL}}"
+      - "{{label.version}}={{$root.DEPLOYMENT_VERSION}}"
     logging:
       driver: local
       options:
@@ -74,8 +174,7 @@ services:
       {{/nofile}}
 {{/ulimits}}
     deploy:
-      mode: "replicated"
-      replicas: {{replicas}}
+      mode: global # use 'global' due to Stateful service
       resources: # configures physical resource constraints for container to run on platform.
 {{#resources}}
 {{#limits}}
@@ -99,8 +198,8 @@ services:
       update_config:
         # The number of containers to update at a time.
         parallelism: 1
-        # Order of operations during updates
-        order: {{deploy.update_config.order}}
+        # Order of operations during updates. We cannot use 'start-first' due to host ports 80 and 443 are busy
+        order: stop-first
         # What to do if an update fails
         failure_action: pause
         # The time to wait between updating a group of containers
@@ -117,3 +216,4 @@ services:
         max_attempts: 2
         # How long to wait before deciding if a restart has succeeded
         window: 120s
+{{/traefik}}

@@ -1,0 +1,59 @@
+[http]
+
+  [http.middlewares]
+
+    [http.middlewares.force-ssl]
+
+      [http.middlewares.force-ssl.redirectScheme]
+        # Redirect to https
+        scheme = "https"
+        permanent = true
+        port = "443"
+
+      [http.middlewares.cors-anywhere]
+
+        [http.middlewares.cors-anywhere.headers]
+          # https://doc.traefik.io/traefik/v2.11/middlewares/headers/#cors-headers
+          accessControlAllowMethods = ["*"]
+          accessControlAllowHeaders = ["*"]
+          accessControlAllowOriginList = ["*"]
+          accessControlMaxAge = 100
+          addVaryHeader = true
+
+    # Accepts request from defined IP
+    # https://doc.traefik.io/traefik/v2.11/middlewares/http/ipallowlist/
+    [http.middlewares.internal-ips.ipAllowList]
+      sourceRange = [
+        # https://t.me/theanurin - office01
+        "77.120.224.121",
+        # https://t.me/theanurin - home (Мозеса Гомберга 66, seti.kr.ua)
+        "91.202.132.0/22",
+        # https://t.me/theanurin - home (Київ, Соборна 126/20, Corbina)
+        "91.210.248.0/22",
+        # https://t.me/theanurin - home (Гагаріна 12, Kyivstar)
+        "188.163.0.0/17",
+        # https://t.me/theanurin - office02
+        "193.238.36.205",
+      ]
+    [http.middlewares.remove-header-x-real-ip.headers]
+      [http.middlewares.remove-header-x-real-ip.headers.customRequestHeaders]
+        # https://doc.traefik.io/traefik/v2.11/middlewares/http/headers/#customrequestheaders
+        "X-Real-IP" = "" # Remove buggy X-Real-IP header. See https://github.com/traefik/traefik/issues/8497
+
+  [http.routers.dashboard]
+    rule = "Host(`traefik.maintenance.example.org`)"
+    service = "api@internal"
+    entrypoints = ["websecure"]
+    #middlewares = ["internal-ips"]
+    [http.routers.dashboard.tls]
+      certResolver = "defaultCertificatesResolver"
+      [[http.routers.dashboard.tls.domains]]
+        main = "traefik.maintenance.example.org"
+        #sans = ["*.maintenance.example.org"]
+
+
+[tls.stores]
+  [tls.stores.default]
+    [tls.stores.default.defaultCertificate]
+      certFile = "/traefik-data/server.crt"
+      keyFile = "/traefik-data/server.key"

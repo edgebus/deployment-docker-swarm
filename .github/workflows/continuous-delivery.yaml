@@ -1,13 +1,13 @@
-name: "Delivery: HAProxy"
+name: "Delivery: Traefik"
 
 on:
   push:
     tags:
-      - 'haproxy*'
+      - 'traefik*'
     branches:
-      - 'haproxy*'
+      - 'traefik*'
 
-run-name: "Delivery: HAProxy (${{ github.ref_name }})"
+run-name: "Delivery: Traefik (${{ github.ref_name }})"
 
 env:
   DEPLOYMENT_STACK_NAME: "cluster"
@@ -23,7 +23,7 @@ jobs:
         run: |
           set -eo pipefail
           if [ "${{ github.ref_type }}" == "tag" ]; then
-            if ! echo -n "${{ github.ref_name }}" | egrep -qe '(haproxy[a-z]*)-20[2-9][5-9][0-9][0-9][0-9][0-9][0-9]?[0-9]?[0-9]?[0-9]?[0-9]?[0-9]?(-rc[0-9]+)?$'; then
+            if ! echo -n "${{ github.ref_name }}" | egrep -qe '(traefik[a-z]*)-20[2-9][5-9][0-9][0-9][0-9][0-9][0-9]?[0-9]?[0-9]?[0-9]?[0-9]?[0-9]?(-rc[0-9]+)?$'; then
               echo "Wrong tag name '${{ github.ref_name }}'." >&2
               exit 1
             fi
@@ -96,7 +96,7 @@ jobs:
               --mount "type=bind,source=${PWD}/MANIFEST,target=/tmp/MANIFEST" \
               --mount "type=bind,source=${PWD}/MANIFEST-${{ matrix.environment }},target=/tmp/MANIFEST-${{ matrix.environment }}" \
               theanurin/configuration-templates:20250503 \
-                --engine mustache \
+                --engine liquid \
                 --config-file="/tmp/MANIFEST" \
                 --config-file="/tmp/MANIFEST-${{ matrix.environment }}"
           )
@@ -123,7 +123,7 @@ jobs:
 
             DEPLOYMENT_EXTERNAL_CONFIGS_AND_SECRETS=true
           fi
-          cat stack.yml.mustache | \
+          cat stack.yml.liquid | \
             docker run \
               --interactive \
               --rm \
@@ -136,7 +136,7 @@ jobs:
               --env DEPLOYMENT_PIPELINE_URL \
               --env DEPLOYMENT_VERSION \
               theanurin/configuration-templates:20250503 \
-                --engine mustache \
+                --engine liquid \
                 --config-file="/tmp/MANIFEST" \
                 --config-file="/tmp/MANIFEST-${{ matrix.environment }}" \
                 --config-env \
